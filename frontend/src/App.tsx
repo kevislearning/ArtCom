@@ -1,0 +1,128 @@
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from './store';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
+
+// Pages
+import { Home } from './pages/Home';
+import { Explore } from './pages/Explore';
+import { ArtworkDetails } from './pages/ArtworkDetails';
+import { Portfolio } from './pages/Portfolio';
+import { WalletDashboard } from './pages/WalletDashboard';
+import { Commissions } from './pages/Commissions';
+import { Messenger } from './pages/Messenger';
+import { SettingsPage } from './pages/SettingsPage';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Following } from './pages/Following';
+import { Rankings } from './pages/Rankings.tsx';
+import { Bookmarks } from './pages/Bookmarks.tsx';
+import { Dashboard } from './pages/Dashboard.tsx';
+
+// Utilities
+import { initSocket, disconnectSocket } from './utils/socket';
+import { api } from './store/api';
+
+function App() {
+  const dispatch = useDispatch();
+  const { user, token } = useSelector((state: RootState) => state.auth);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Load and apply theme from localStorage on initial boot
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
+  // Initialize WebSockets upon login session activation
+  useEffect(() => {
+    if (token && user) {
+      initSocket(
+        token,
+        () => {
+          // Invalidate notifications cache on new socket push alert
+          dispatch(api.util.invalidateTags(['Notification']));
+        },
+        () => {
+          // Invalidate chats cache on new message socket push alert
+          dispatch(api.util.invalidateTags(['Chat']));
+        }
+      );
+    } else {
+      disconnectSocket();
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [token, user, dispatch]);
+
+  return (
+    <Router>
+      <div className="app-container">
+        {/* Collapsible Sidebar */}
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+
+        <div className="app-main">
+          {/* Top Sticky Header */}
+          <TopBar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+
+          <main className="app-content animate-fade-in">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/artwork/:id" element={<ArtworkDetails />} />
+              <Route path="/portfolio/:id" element={<Portfolio />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/rankings" element={<Rankings />} />
+
+              {/* Session Protected Routes */}
+              <Route
+                path="/following"
+                element={user ? <Following /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/wallet"
+                element={user ? <WalletDashboard /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/commissions"
+                element={user ? <Commissions /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/messenger"
+                element={user ? <Messenger /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/bookmarks"
+                element={user ? <Bookmarks /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/dashboard"
+                element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+              />
+
+              {/* Authentication Routes */}
+              <Route
+                path="/login"
+                element={!user ? <Login /> : <Navigate to="/" replace />}
+              />
+              <Route
+                path="/register"
+                element={!user ? <Register /> : <Navigate to="/" replace />}
+              />
+
+              {/* Fallback route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
