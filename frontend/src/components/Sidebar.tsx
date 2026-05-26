@@ -19,6 +19,7 @@ import { logout } from '../store/authSlice';
 import { useLogoutMutation } from '../store/authApi';
 import { translations } from '../utils/translation';
 import { disconnectSocket } from '../utils/socket';
+import { getImageUrl } from '../utils/url';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -146,7 +147,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
             }}
           >
             <img
-              src={user.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
+              src={getImageUrl(user.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
               alt={user.nickname}
               style={{
                 width: '40px',

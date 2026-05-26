@@ -24,7 +24,14 @@ export const illustrationApi = api.injectEndpoints({
     }),
     getFollowedFeed: builder.query<Illustration[], void>({
       query: () => '/illustrations/followed',
-      providesTags: ['Illustration'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'Illustration' as const, id: _id })),
+              { type: 'Illustration', id: 'FOLLOWED_LIST' },
+              'User',
+            ]
+          : [{ type: 'Illustration', id: 'FOLLOWED_LIST' }, 'User'],
     }),
     getIllustrationById: builder.query<Illustration, string>({
       query: (id) => `/illustrations/${id}`,
@@ -67,7 +74,14 @@ export const illustrationApi = api.injectEndpoints({
     }),
     getBookmarkedIllustrations: builder.query<Illustration[], void>({
       query: () => '/illustrations/feed/bookmarks',
-      providesTags: ['Illustration'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'Illustration' as const, id: _id })),
+              { type: 'Illustration', id: 'BOOKMARKS_LIST' },
+              'User',
+            ]
+          : [{ type: 'Illustration', id: 'BOOKMARKS_LIST' }, 'User'],
     }),
     updateIllustration: builder.mutation<
       Illustration,

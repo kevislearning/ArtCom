@@ -5,6 +5,7 @@ import type { RootState } from '../store';
 import { translations } from '../utils/translation';
 import { setLanguage, updateUser } from '../store/authSlice';
 import { useUpdateProfileMutation, useChangePasswordMutation } from '../store/authApi';
+import { getImageUrl } from '../utils/url';
 
 export const SettingsPage = () => {
   const dispatch = useDispatch();
@@ -234,7 +235,7 @@ export const SettingsPage = () => {
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
                 <img
-                  src={avatarPreview || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + user.username}
+                  src={getImageUrl(avatarPreview) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + user.username}
                   alt="avatar"
                   style={{
                     width: '80px',

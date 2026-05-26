@@ -15,6 +15,8 @@ import { useGetIllustrationsQuery } from '../store/illustrationApi';
 import { useToggleFollowMutation, useCheckFollowStatusQuery } from '../store/followApi';
 import { useCreateCommissionMutation } from '../store/commissionApi';
 import { ArtworkCard } from '../components/ArtworkCard';
+import { getImageUrl } from '../utils/url';
+
 
 export const Portfolio = () => {
   const { id } = useParams<{ id: string }>();
@@ -182,7 +184,7 @@ export const Portfolio = () => {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '24px', flexWrap: 'wrap' }}>
             {/* Avatar Frame */}
             <img
-              src={profileUser.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + profileUser.username}
+              src={getImageUrl(profileUser.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + profileUser.username}
               alt={profileUser.nickname}
               style={{
                 width: '120px',

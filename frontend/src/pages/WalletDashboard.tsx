@@ -107,8 +107,8 @@ export const WalletDashboard = () => {
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!depositAmount || depositAmount < 1000) {
-      setErrorMessage('Số tiền nạp tối thiểu là 1,000 VND!');
+    if (!depositAmount || depositAmount < 100000) {
+      setErrorMessage('Số tiền nạp tối thiểu là 100,000 VND!');
       return;
     }
 
@@ -200,8 +200,8 @@ export const WalletDashboard = () => {
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!withdrawAmount || withdrawAmount <= 0) {
-      setErrorMessage('Vui lòng nhập số tiền rút hợp lệ!');
+    if (!withdrawAmount || withdrawAmount < 50000) {
+      setErrorMessage('Số tiền rút tối thiểu là 50,000 VND!');
       return;
     }
 
@@ -377,14 +377,14 @@ export const WalletDashboard = () => {
           <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {t.walletBalance}
           </span>
-          <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#ffffff', filter: 'drop-shadow(0 0 10px var(--primary-glow))' }}>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', filter: 'drop-shadow(0 0 10px var(--primary-glow))' }}>
             {formatVND(currentBalance)}
           </h2>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
+          {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
             <CheckCircle size={14} style={{ color: 'var(--accent)' }} />
             <span>Ví giao dịch giả lập an toàn</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Deposit Panel */}
@@ -451,7 +451,7 @@ export const WalletDashboard = () => {
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value ? Number(e.target.value) : '')}
               placeholder={paymentMethod === 'momo' ? 'Nhập tiền nạp MoMo (đ)...' : 'Nhập tiền chuyển khoản (đ)...'}
-              min={1000}
+              min={100000}
               step={10000}
               required
             />
@@ -483,7 +483,7 @@ export const WalletDashboard = () => {
               value={withdrawAmount}
               onChange={(e) => setWithdrawAmount(e.target.value ? Number(e.target.value) : '')}
               placeholder={t.withdrawPlaceholder}
-              min={10000}
+              min={50000}
               step={10000}
               required
             />

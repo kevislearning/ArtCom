@@ -7,6 +7,8 @@ import { translations } from '../utils/translation';
 import { useGetIllustrationsQuery, useCreateIllustrationMutation } from '../store/illustrationApi';
 import { useGetRecommendedArtistsQuery } from '../store/authApi';
 import { ArtworkCard } from '../components/ArtworkCard';
+import { getImageUrl } from '../utils/url';
+
 
 export const Explore = () => {
   const location = useLocation();
@@ -288,7 +290,7 @@ export const Explore = () => {
                 }}
               >
                 <img
-                  src={artist.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
+                  src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
                   alt={artist.nickname}
                   style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--glass-border)' }}
                 />

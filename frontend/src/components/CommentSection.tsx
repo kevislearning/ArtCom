@@ -5,6 +5,8 @@ import type { Comment } from '../types';
 import type { RootState } from '../store';
 import { useCreateCommentMutation, useDeleteCommentMutation } from '../store/commentApi';
 import { translations } from '../utils/translation';
+import { getImageUrl } from '../utils/url';
+
 
 interface CommentSectionProps {
   illustrationId: string;
@@ -102,7 +104,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
         )}
 
         <img
-          src={comment.userId.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + comment.userId.username}
+          src={getImageUrl(comment.userId.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + comment.userId.username}
           alt={comment.userId.nickname}
           style={{
             width: isReply ? '32px' : '40px',

@@ -4,6 +4,8 @@ import type { Illustration } from '../types';
 import { useToggleLikeMutation, useToggleBookmarkMutation } from '../store/illustrationApi';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
+import { getImageUrl } from '../utils/url';
+
 
 interface ArtworkCardProps {
   artwork: Illustration;
@@ -172,7 +174,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
               style={{ display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}
             >
               <img
-                src={artist.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
+                src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
                 alt={artist.nickname}
                 style={{
                   width: '28px',

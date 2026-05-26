@@ -51,8 +51,8 @@ const postRequest = (url, body) => {
 export const depositFunds = async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Amount must be greater than zero' });
+    if (!amount || amount < 100000) {
+      return res.status(400).json({ message: 'Số tiền nạp tối thiểu là 100,000 VND!' });
     }
 
     const { user, transaction } = await walletService.deposit(req.user.id, amount, 'Simulated Deposit (Nạp tiền giả lập)');
@@ -66,8 +66,8 @@ export const depositFunds = async (req, res) => {
 export const withdrawFunds = async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Amount must be greater than zero' });
+    if (!amount || amount < 50000) {
+      return res.status(400).json({ message: 'Số tiền rút tối thiểu là 50,000 VND!' });
     }
 
     const { user, transaction } = await walletService.withdraw(req.user.id, amount, 'Simulated Withdrawal (Rút tiền giả lập)');
@@ -107,8 +107,8 @@ export const getBalance = async (req, res) => {
 export const initiateMomoPayment = async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount || amount < 1000) {
-      return res.status(400).json({ message: 'Amount must be at least 1,000 VND' });
+    if (!amount || amount < 100000) {
+      return res.status(400).json({ message: 'Số tiền nạp tối thiểu là 100,000 VND!' });
     }
 
     const partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMOBKUN20180529';
@@ -197,8 +197,8 @@ export const mockConfirmMomoPayment = async (req, res) => {
 export const confirmBankDeposit = async (req, res) => {
   try {
     const { amount, referenceCode } = req.body;
-    if (!amount || amount <= 0 || !referenceCode) {
-      return res.status(400).json({ message: 'Amount and referenceCode are required' });
+    if (!amount || amount < 100000 || !referenceCode) {
+      return res.status(400).json({ message: 'Số tiền nạp tối thiểu là 100,000 VND và mã tham chiếu là bắt buộc!' });
     }
 
     const existingTx = await WalletTransaction.findOne({ description: new RegExp(referenceCode) });

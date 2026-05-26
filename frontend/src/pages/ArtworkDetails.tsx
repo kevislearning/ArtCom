@@ -13,6 +13,8 @@ import {
 import { useGetCommentsQuery } from '../store/commentApi';
 import { useToggleFollowMutation, useCheckFollowStatusQuery } from '../store/followApi';
 import { CommentSection } from '../components/CommentSection';
+import { getImageUrl } from '../utils/url';
+
 
 export const ArtworkDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -347,7 +349,7 @@ export const ArtworkDetails = () => {
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                 >
                   <img
-                    src={artist.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
+                    src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
                     alt={artist.nickname}
                     style={{
                       width: '44px',

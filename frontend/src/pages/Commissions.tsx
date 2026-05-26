@@ -19,6 +19,8 @@ import {
   useCancelCommissionMutation,
   useCompleteCommissionMutation,
 } from '../store/commissionApi';
+import { getImageUrl } from '../utils/url';
+
 
 export const Commissions = () => {
   const navigate = useNavigate();
@@ -282,7 +284,7 @@ export const Commissions = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <img
-                      src={partner?.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + partner?.username}
+                      src={getImageUrl(partner?.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + partner?.username}
                       alt={partner?.nickname}
                       style={{
                         width: '40px',

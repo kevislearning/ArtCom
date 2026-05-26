@@ -14,6 +14,7 @@ export const translations = {
     rankings: 'Xếp hạng',
     bookmarksNav: 'Bộ sưu tập',
     dashboardNav: 'Dashboard',
+    notifications: 'Thông báo',
     
     // Auth & General
     username: 'Tên tài khoản',
@@ -132,6 +133,7 @@ export const translations = {
     rankings: 'Rankings',
     bookmarksNav: 'Collection',
     dashboardNav: 'Dashboard',
+    notifications: 'Notifications',
     
     // Auth & General
     username: 'Username',

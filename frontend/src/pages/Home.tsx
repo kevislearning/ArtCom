@@ -6,6 +6,8 @@ import { translations } from '../utils/translation';
 import { useGetIllustrationsQuery, useGetTrendingTagsQuery } from '../store/illustrationApi';
 import { useGetRecommendedArtistsQuery } from '../store/authApi';
 import { ArtworkCard } from '../components/ArtworkCard';
+import { getImageUrl } from '../utils/url';
+
 
 export const Home = () => {
   const navigate = useNavigate();
@@ -159,7 +161,7 @@ export const Home = () => {
                 }}
               >
                 <img
-                  src={artist.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
+                  src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
                   alt={artist.nickname}
                   style={{
                     width: '72px',

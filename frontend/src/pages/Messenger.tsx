@@ -12,6 +12,8 @@ import {
 import { useGetPublicProfileQuery } from '../store/authApi';
 import { socket } from '../utils/socket';
 import type { Message } from '../types';
+import { getImageUrl } from '../utils/url';
+
 
 export const Messenger = () => {
   const location = useLocation();
@@ -26,6 +28,7 @@ export const Messenger = () => {
   const [partnerIsTyping, setPartnerIsTyping] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
 
   // Sync state from query ?userId=
@@ -54,19 +57,30 @@ export const Messenger = () => {
 
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
+  // Auto-refetch conversations list when page is opened
+  useEffect(() => {
+    if (user && location.pathname === '/messenger') {
+      refetchConvos();
+    }
+  }, [location.pathname, user]);
+
+
+
   // Socket triggers for real-time messaging
   useEffect(() => {
     const currentSocket = socket;
-    if (!currentSocket || !activePartnerId) return;
+    if (!currentSocket) return;
 
-    // Join room specifically for the active chat
-    currentSocket.emit('join_chat', activePartnerId);
+    if (activePartnerId) {
+      // Join room specifically for the active chat
+      currentSocket.emit('join_chat', activePartnerId);
+    }
 
     const handleNewMessage = (msg: Message) => {
       // If the incoming message is from the active partner, refetch active log
       if (
-        msg.senderId._id === activePartnerId ||
-        msg.receiverId._id === activePartnerId
+        activePartnerId &&
+        (msg.senderId._id === activePartnerId || msg.receiverId._id === activePartnerId)
       ) {
         refetchMessages();
       }
@@ -74,7 +88,7 @@ export const Messenger = () => {
     };
 
     const handleTypingStatus = ({ senderId, isTyping }: { senderId: string; isTyping: boolean }) => {
-      if (senderId === activePartnerId) {
+      if (activePartnerId && senderId === activePartnerId) {
         setPartnerIsTyping(isTyping);
       }
     };
@@ -88,9 +102,12 @@ export const Messenger = () => {
     };
   }, [activePartnerId, socket]);
 
+
   // Scroll to bottom on new message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages, partnerIsTyping]);
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +163,7 @@ export const Messenger = () => {
         gridTemplateColumns: '320px 1fr',
         borderRadius: 'var(--border-radius-lg)',
         border: '1px solid var(--glass-border)',
-        height: 'calc(100vh - 120px)',
+        height: 'calc(100vh - 200px)',
         overflow: 'hidden',
         backgroundColor: 'var(--bg-secondary)',
       }}
@@ -158,6 +175,7 @@ export const Messenger = () => {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
+          minHeight: 0,
         }}
       >
         <div style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)' }}>
@@ -202,7 +220,7 @@ export const Messenger = () => {
                 }}
               >
                 <img
-                  src={convo.user.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + convo.user.username}
+                  src={getImageUrl(convo.user.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + convo.user.username}
                   alt={convo.user.nickname}
                   style={{
                     width: '40px',
@@ -251,7 +269,15 @@ export const Messenger = () => {
       </div>
 
       {/* 2. Right Column: Active chat room */}
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--bg-primary)' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          backgroundColor: 'var(--bg-primary)',
+          minHeight: 0,
+        }}
+      >
         {activePartnerId && partnerProfile ? (
           <>
             {/* Header: Partner details */}
@@ -270,7 +296,7 @@ export const Messenger = () => {
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
               >
                 <img
-                  src={partnerProfile.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + partnerProfile.username}
+                  src={getImageUrl(partnerProfile.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + partnerProfile.username}
                   alt={partnerProfile.nickname}
                   style={{
                     width: '40px',
@@ -287,7 +313,18 @@ export const Messenger = () => {
             </div>
 
             {/* Messaging Streams logs */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div
+              ref={messagesContainerRef}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '32px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                minHeight: 0,
+              }}
+            >
               {messages.map((msg) => {
                 const isSentByMe = msg.senderId._id === user?._id;
 

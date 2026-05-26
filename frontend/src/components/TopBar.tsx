@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
@@ -10,7 +10,6 @@ import {
   Plus,
 } from 'lucide-react';
 import type { RootState } from '../store';
-import { setLanguage } from '../store/authSlice';
 import {
   useGetNotificationsQuery,
   useMarkAllNotificationsReadMutation,
@@ -18,6 +17,8 @@ import {
 } from '../store/notificationApi';
 import { useGetWalletBalanceQuery } from '../store/walletApi';
 import { translations } from '../utils/translation';
+import { getImageUrl } from '../utils/url';
+
 
 interface TopBarProps {
   collapsed: boolean;
@@ -25,7 +26,6 @@ interface TopBarProps {
 }
 
 export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -34,9 +34,6 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
 
   const [searchVal, setSearchVal] = useState('');
   const [showNotif, setShowNotif] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(
-    (localStorage.getItem('theme') as 'dark' | 'light') || 'dark'
-  );
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -299,7 +296,7 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
                     borderBottom: '1px solid var(--glass-border)',
                   }}
                 >
-                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{t.comments} ({notifications.length})</span>
+                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{t.notifications || (language === 'vn' ? 'Thông báo' : 'Notifications')} ({notifications.length})</span>
                   {unreadCount > 0 && (
                     <button
                       onClick={() => markAllRead()}
@@ -349,7 +346,7 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
                         }
                       >
                         <img
-                          src={notif.actorId?.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + notif._id}
+                          src={getImageUrl(notif.actorId?.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + notif._id}
                           alt="avatar"
                           style={{
                             width: '36px',
