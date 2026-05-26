@@ -44,6 +44,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    requestTerms: {
+      title: { type: String, default: '' },
+      details: { type: String, default: '' },
+      targetPrice: { type: Number, default: 0 },
+      backgroundUrl: { type: String, default: '' },
+      hasTerms: { type: Boolean, default: false }
+    },
     walletBalance: {
       type: Number,
       default: 0, // VND currency

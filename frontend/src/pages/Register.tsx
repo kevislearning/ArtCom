@@ -17,7 +17,6 @@ export const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
-  const [isArtist, setIsArtist] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const [registerUser, { isLoading }] = useRegisterMutation();
@@ -37,7 +36,6 @@ export const Register = () => {
         email,
         password,
         nickname: nickname || username,
-        isArtist,
       }).unwrap();
       dispatch(setCredentials({ user: response, token: response.token }));
       navigate('/');
@@ -176,24 +174,6 @@ export const Register = () => {
               />
               <UserIcon size={18} style={{ position: 'absolute', left: '16px', color: 'var(--text-muted)' }} />
             </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-            <input
-              type="checkbox"
-              id="isArtist"
-              checked={isArtist}
-              onChange={(e) => setIsArtist(e.target.checked)}
-              style={{
-                width: '18px',
-                height: '18px',
-                accentColor: 'var(--primary)',
-                cursor: 'pointer',
-              }}
-            />
-            <label htmlFor="isArtist" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
-              {t.isArtist}
-            </label>
           </div>
 
           <button

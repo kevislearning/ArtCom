@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
   Check,
@@ -20,16 +20,19 @@ import {
   useCompleteCommissionMutation,
 } from '../store/commissionApi';
 import { getImageUrl } from '../utils/url';
+import { updateUser } from '../store/authSlice';
+import { useUpdateRequestTermsMutation, useDeleteRequestTermsMutation } from '../store/authApi';
 
 
 export const Commissions = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
   // Tab state: 'requested' (Client view) vs 'received' (Artist view)
   const [commTab, setCommTab] = useState<'requested' | 'received'>(
-    user?.isArtist ? 'received' : 'requested'
+    user?.requestTerms?.hasTerms ? 'received' : 'requested'
   );
 
   // Delivery Modal State
@@ -37,6 +40,28 @@ export const Commissions = () => {
   const [deliveryFiles, setDeliveryFiles] = useState<FileList | null>(null);
   const [deliveryPreviews, setDeliveryPreviews] = useState<string[]>([]);
   const [deliveryError, setDeliveryError] = useState('');
+
+  // Request Terms Modal State
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsTitle, setTermsTitle] = useState(user?.requestTerms?.title || '');
+  const [termsDetails, setTermsDetails] = useState(user?.requestTerms?.details || '');
+  const [termsPrice, setTermsPrice] = useState(user?.requestTerms?.targetPrice || 100000);
+  const [termsBgFile, setTermsBgFile] = useState<File | null>(null);
+  const [termsBgPreview, setTermsBgPreview] = useState(user?.requestTerms?.backgroundUrl || '');
+  const [termsError, setTermsError] = useState('');
+  const [isSubmittingTerms, setIsSubmittingTerms] = useState(false);
+
+  const [updateRequestTerms] = useUpdateRequestTermsMutation();
+  const [deleteRequestTerms] = useDeleteRequestTermsMutation();
+
+  useEffect(() => {
+    if (user?.requestTerms) {
+      setTermsTitle(user.requestTerms.title || '');
+      setTermsDetails(user.requestTerms.details || '');
+      setTermsPrice(user.requestTerms.targetPrice || 100000);
+      setTermsBgPreview(user.requestTerms.backgroundUrl || '');
+    }
+  }, [user]);
 
   // Queries
   const { data: requestedCommissions = [], refetch: refetchClient } = useGetClientCommissionsQuery(
@@ -46,7 +71,7 @@ export const Commissions = () => {
 
   const { data: receivedCommissions = [], refetch: refetchArtist } = useGetArtistCommissionsQuery(
     undefined,
-    { skip: !user || !user.isArtist }
+    { skip: !user }
   );
 
   // Mutations
@@ -184,6 +209,69 @@ export const Commissions = () => {
     }
   };
 
+  const handleTermsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTermsError('');
+    setIsSubmittingTerms(true);
+
+    if (!termsTitle.trim()) {
+      setTermsError('Vui lòng điền tiêu đề điều khoản!');
+      setIsSubmittingTerms(false);
+      return;
+    }
+    if (!termsDetails.trim()) {
+      setTermsError('Vui lòng điền chi tiết điều khoản!');
+      setIsSubmittingTerms(false);
+      return;
+    }
+    if (termsPrice <= 0) {
+      setTermsError('Giá đề xuất phải lớn hơn 0!');
+      setIsSubmittingTerms(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', termsTitle.trim());
+    formData.append('details', termsDetails.trim());
+    formData.append('targetPrice', String(termsPrice));
+    if (termsBgFile) {
+      formData.append('background', termsBgFile);
+    }
+
+    try {
+      const updatedUser = await updateRequestTerms(formData).unwrap();
+      dispatch(updateUser(updatedUser));
+      setShowTermsModal(false);
+      alert('Đã cập nhật Điều khoản đặt vẽ thành công!');
+    } catch (err: any) {
+      console.error(err);
+      setTermsError(err.data?.message || 'Có lỗi xảy ra khi lưu điều khoản!');
+    } finally {
+      setIsSubmittingTerms(false);
+    }
+  };
+
+  const handleTermsDelete = async () => {
+    if (window.confirm('Bạn có chắc muốn xóa Điều khoản đặt vẽ? Bạn sẽ không thể nhận yêu cầu vẽ mới từ người dùng khác.')) {
+      setTermsError('');
+      setIsSubmittingTerms(true);
+      try {
+        const updatedUser = await deleteRequestTerms().unwrap();
+        dispatch(updateUser(updatedUser));
+        setShowTermsModal(false);
+        // Reset local previews/files
+        setTermsBgFile(null);
+        setTermsBgPreview('');
+        alert('Đã xóa Điều khoản nhận vẽ thành công!');
+      } catch (err: any) {
+        console.error(err);
+        setTermsError(err.data?.message || 'Có lỗi xảy ra khi xóa điều khoản!');
+      } finally {
+        setIsSubmittingTerms(false);
+      }
+    }
+  };
+
   const activeCommissions =
     commTab === 'received' ? receivedCommissions : requestedCommissions;
 
@@ -195,55 +283,132 @@ export const Commissions = () => {
           {t.commissions}
         </h1>
 
-        {user?.isArtist && (
-          <div
-            className="glass-panel"
-            style={{
-              display: 'flex',
-              padding: '4px',
-              borderRadius: '24px',
-              border: '1px solid var(--glass-border)',
-            }}
-          >
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {/* Request Terms configuration button */}
             <button
-              onClick={() => setCommTab('received')}
+              onClick={() => setShowTermsModal(true)}
+              className="btn btn-secondary"
               style={{
-                padding: '8px 20px',
                 borderRadius: '20px',
-                border: 'none',
-                cursor: 'pointer',
+                padding: '8px 20px',
                 fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: commTab === 'received' ? 'var(--primary)' : 'transparent',
-                color: commTab === 'received' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'all var(--transition-fast)',
+                fontWeight: 700,
+                borderColor: 'var(--primary)',
+                color: 'var(--primary)',
+                backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all var(--transition-fast)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--primary)';
+                e.currentTarget.style.color = '#ffffff';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.05)';
+                e.currentTarget.style.color = 'var(--primary)';
               }}
             >
-              Yêu cầu nhận vẽ ({receivedCommissions.length})
+              <Upload size={14} />
+              {user.requestTerms?.hasTerms ? 'Thay đổi điều khoản' : 'Tạo điều khoản nhận vẽ'}
             </button>
-            <button
-              onClick={() => setCommTab('requested')}
+
+            <div
+              className="glass-panel"
               style={{
-                padding: '8px 20px',
-                borderRadius: '20px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: commTab === 'requested' ? 'var(--primary)' : 'transparent',
-                color: commTab === 'requested' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'all var(--transition-fast)',
+                display: 'flex',
+                padding: '4px',
+                borderRadius: '24px',
+                border: '1px solid var(--glass-border)',
               }}
             >
-              Yêu cầu đã đặt ({requestedCommissions.length})
-            </button>
+              <button
+                onClick={() => setCommTab('received')}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  backgroundColor: commTab === 'received' ? 'var(--primary)' : 'transparent',
+                  color: commTab === 'received' ? '#ffffff' : 'var(--text-secondary)',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                Yêu cầu nhận vẽ ({receivedCommissions.length})
+              </button>
+              <button
+                onClick={() => setCommTab('requested')}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  backgroundColor: commTab === 'requested' ? 'var(--primary)' : 'transparent',
+                  color: commTab === 'requested' ? '#ffffff' : 'var(--text-secondary)',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                Yêu cầu đã đặt ({requestedCommissions.length})
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* Main List of Commissions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {activeCommissions.length === 0 ? (
+        {commTab === 'received' && !user?.requestTerms?.hasTerms ? (
+          <div
+            className="glass-panel animate-fade-in"
+            style={{
+              padding: '48px 32px',
+              textAlign: 'center',
+              borderRadius: 'var(--border-radius-lg)',
+              border: '1px solid var(--glass-border)',
+              backgroundColor: 'var(--bg-secondary)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              maxWidth: '640px',
+              margin: '24px auto',
+              boxShadow: 'var(--card-shadow)'
+            }}
+          >
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary)',
+                marginBottom: '8px'
+              }}
+            >
+              <Upload size={32} />
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: 800 }}>Bắt đầu nhận đặt vẽ tranh kiếm thu nhập!</h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '480px' }}>
+              Hãy thiết lập ngay Điều khoản đặt vẽ (Request Terms) của riêng bạn. Người dùng khác sẽ dễ dàng xem mức giá đề xuất, điều kiện vẽ tranh của bạn và gửi yêu cầu đặt vẽ trực tiếp từ trang cá nhân của bạn!
+            </p>
+            <button
+              onClick={() => setShowTermsModal(true)}
+              className="btn btn-primary"
+              style={{ borderRadius: '24px', padding: '12px 32px', fontSize: '15px', fontWeight: 700, marginTop: '8px' }}
+            >
+              Thiết lập điều khoản ngay
+            </button>
+          </div>
+        ) : activeCommissions.length === 0 ? (
           <div
             style={{
               padding: '64px',
@@ -600,6 +765,238 @@ export const Commissions = () => {
                   <Check size={16} />
                   {isCompleting ? 'Đang bàn giao...' : 'Xác nhận bàn giao'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Request Terms Setup Modal */}
+      {showTermsModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(10, 11, 16, 0.85)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '24px',
+          }}
+        >
+          <div
+            className="glass-panel animate-fade-in"
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              borderRadius: 'var(--border-radius-lg)',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--glass-border)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              boxShadow: 'var(--card-shadow)',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 32px',
+                borderBottom: '1px solid var(--glass-border)',
+              }}
+            >
+              <h2 style={{ fontSize: '20px', fontWeight: 800 }}>
+                {user?.requestTerms?.hasTerms ? 'Cập nhật điều khoản nhận vẽ' : 'Tạo điều khoản nhận vẽ'}
+              </h2>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleTermsSubmit} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {termsError && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    color: 'var(--danger)',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--border-radius-sm)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                  }}
+                >
+                  {termsError}
+                </div>
+              )}
+
+              {/* Cover Image Upload (Pixiv style background) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700 }}>Ảnh bìa Điều khoản (Cover Background) *</label>
+                <div
+                  style={{
+                    height: '140px',
+                    borderRadius: 'var(--border-radius-sm)',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    position: 'relative',
+                    backgroundImage: termsBgPreview
+                      ? `url(${termsBgPreview.startsWith('blob') || termsBgPreview.startsWith('http') ? termsBgPreview : `${((import.meta.env.VITE_API_URL as string)?.replace('/api', '') || 'http://localhost:5000')}${termsBgPreview}`})`
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    border: '1px solid var(--glass-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(10, 11, 16, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <label
+                      style={{
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backgroundColor: 'rgba(10, 11, 16, 0.75)',
+                        padding: '8px 16px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#ffffff',
+                        border: '1px solid var(--glass-border)',
+                      }}
+                    >
+                      <Upload size={14} />
+                      Tải ảnh nền
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            setTermsBgFile(file);
+                            setTermsBgPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700 }}>Tiêu đề Điều khoản *</label>
+                <input
+                  type="text"
+                  className="glass-input"
+                  value={termsTitle}
+                  onChange={(e) => setTermsTitle(e.target.value)}
+                  placeholder="Nhận vẽ tranh chân dung, phong cảnh chất lượng cao..."
+                  required
+                />
+              </div>
+
+              {/* Details */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700 }}>Chi tiết điều khoản (Điều kiện, thời gian vẽ...) *</label>
+                <textarea
+                  className="glass-input"
+                  rows={5}
+                  value={termsDetails}
+                  onChange={(e) => setTermsDetails(e.target.value)}
+                  placeholder="Mô tả chi tiết những gì bạn đồng ý nhận vẽ, thời gian trung bình hoàn thành, phong cách vẽ hoặc các yêu cầu cụ thể khác..."
+                  style={{ resize: 'none' }}
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700 }}>Giá khởi điểm mong muốn (VND ₫) *</label>
+                <input
+                  type="number"
+                  className="glass-input"
+                  value={termsPrice}
+                  onChange={(e) => setTermsPrice(Number(e.target.value))}
+                  min={50000}
+                  step={50000}
+                  required
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderTop: '1px solid var(--glass-border)',
+                  paddingTop: '20px',
+                  marginTop: '12px',
+                }}
+              >
+                {/* Delete button (only if has terms already) */}
+                {user?.requestTerms?.hasTerms ? (
+                  <button
+                    type="button"
+                    onClick={handleTermsDelete}
+                    className="btn btn-secondary"
+                    style={{ borderColor: 'var(--danger)', color: 'var(--danger)', borderRadius: '20px' }}
+                    disabled={isSubmittingTerms}
+                  >
+                    Xóa điều khoản
+                  </button>
+                ) : (
+                  <div></div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(false)}
+                    className="btn btn-secondary"
+                    disabled={isSubmittingTerms}
+                  >
+                    {t.cancel}
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={isSubmittingTerms}>
+                    {isSubmittingTerms ? 'Đang lưu...' : 'Lưu điều khoản'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

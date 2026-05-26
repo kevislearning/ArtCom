@@ -67,7 +67,7 @@ function App() {
 
         <div className="app-main">
           {/* Top Sticky Header */}
-          <TopBar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+          <TopBar />
 
           <main className="app-content animate-fade-in">
             <Routes>

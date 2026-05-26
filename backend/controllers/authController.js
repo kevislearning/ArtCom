@@ -29,6 +29,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     avatarUrl: user.avatarUrl,
     bannerUrl: user.bannerUrl,
     isArtist: user.isArtist,
+    requestTerms: user.requestTerms,
     walletBalance: user.walletBalance,
     socialLinks: user.socialLinks,
     totalViews: user.totalViews,
@@ -217,5 +218,65 @@ export const changePassword = async (req, res) => {
   } catch (error) {
     console.error('[Change Password Error]', error);
     res.status(500).json({ message: 'Server error changing password' });
+  }
+};
+
+export const updateRequestTerms = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { title, details, targetPrice } = req.body;
+
+    user.requestTerms = {
+      ...user.requestTerms,
+      title: title || user.requestTerms.title,
+      details: details || user.requestTerms.details,
+      targetPrice: targetPrice !== undefined ? Number(targetPrice) : user.requestTerms.targetPrice,
+      hasTerms: true
+    };
+
+    if (req.file) {
+      user.requestTerms.backgroundUrl = `/uploads/${req.file.filename}`;
+    }
+
+    user.isArtist = true; // Sync for compatibility
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-passwordHash');
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error('[Update Request Terms Error]', error);
+    res.status(500).json({ message: 'Server error updating request terms' });
+  }
+};
+
+export const deleteRequestTerms = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.requestTerms = {
+      title: '',
+      details: '',
+      targetPrice: 0,
+      backgroundUrl: '',
+      hasTerms: false
+    };
+
+    user.isArtist = false; // Sync for compatibility
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-passwordHash');
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error('[Delete Request Terms Error]', error);
+    res.status(500).json({ message: 'Server error deleting request terms' });
   }
 };

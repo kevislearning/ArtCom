@@ -1,3 +1,11 @@
+export interface RequestTerms {
+  title: string;
+  details: string;
+  targetPrice: number;
+  backgroundUrl: string;
+  hasTerms: boolean;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -7,6 +15,7 @@ export interface User {
   avatarUrl: string;
   bannerUrl: string;
   isArtist: boolean;
+  requestTerms?: RequestTerms;
   walletBalance: number;
   socialLinks?: {
     twitter?: string;

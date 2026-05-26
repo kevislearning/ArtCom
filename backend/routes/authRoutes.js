@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, logout, getMe, getPublicProfile, updateProfile, getRecommendedArtists, changePassword } from '../controllers/authController.js';
+import { register, login, logout, getMe, getPublicProfile, updateProfile, getRecommendedArtists, changePassword, updateRequestTerms, deleteRequestTerms } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
 
@@ -23,5 +23,8 @@ router.put(
 );
 
 router.put('/change-password', protect, changePassword);
+
+router.put('/request-terms', protect, upload.single('background'), updateRequestTerms);
+router.delete('/request-terms', protect, deleteRequestTerms);
 
 export default router;

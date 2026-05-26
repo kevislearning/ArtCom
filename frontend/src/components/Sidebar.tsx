@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
   Home,
   Compass,
@@ -8,18 +8,13 @@ import {
   Briefcase,
   MessageSquare,
   Settings,
-  LogOut,
-  Image,
   Trophy,
   Bookmark,
   LayoutDashboard,
+  Menu,
 } from 'lucide-react';
 import type { RootState } from '../store';
-import { logout } from '../store/authSlice';
-import { useLogoutMutation } from '../store/authApi';
 import { translations } from '../utils/translation';
-import { disconnectSocket } from '../utils/socket';
-import { getImageUrl } from '../utils/url';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,21 +22,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
-  const dispatch = useDispatch();
   const { user, language } = useSelector((state: RootState) => state.auth);
-  const [triggerLogout] = useLogoutMutation();
   const t = translations[language];
-
-  const handleLogout = async () => {
-    try {
-      await triggerLogout().unwrap();
-      dispatch(logout());
-      disconnectSocket();
-    } catch (err) {
-      console.error('Logout failed', err);
-      dispatch(logout());
-    }
-  };
 
   const navItems = [
     { to: '/', label: t.home, icon: Home },
@@ -72,34 +54,36 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         zIndex: 100,
       }}
     >
-      {/* Sidebar Logo */}
+      {/* Sidebar Toggle Hamburger Menu */}
       <div
-        onClick={() => setCollapsed(!collapsed)}
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          padding: '0 8px',
+          justifyContent: 'flex-start',
           marginBottom: '32px',
-          cursor: 'pointer',
-          color: 'var(--primary)',
+          padding: '0 8px',
         }}
       >
-        <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
-        {!collapsed && (
-          <span
-            style={{
-              fontWeight: 800,
-              fontSize: '20px',
-              letterSpacing: '0.5px',
-              background: 'linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            ArtCom
-          </span>
-        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            transition: 'background var(--transition-fast)',
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)')}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+        >
+          <Menu size={20} />
+        </button>
       </div>
 
       {/* Navigation list */}
@@ -133,94 +117,8 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         })}
       </nav>
 
-      {/* Auth user foot info */}
-      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {user && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '8px',
-              borderRadius: 'var(--border-radius-sm)',
-              background: 'rgba(255, 255, 255, 0.03)',
-            }}
-          >
-            <img
-              src={getImageUrl(user.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
-              alt={user.nickname}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid var(--glass-border)',
-              }}
-            />
-            {!collapsed && (
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.nickname}
-                </p>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  @{user.username}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {user ? (
-          <button
-            onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '12px 16px',
-              borderRadius: 'var(--border-radius-sm)',
-              color: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.05)',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 600,
-              width: '100%',
-              fontSize: '15px',
-              transition: 'all var(--transition-fast)',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-            }}
-          >
-            <LogOut size={20} />
-            {!collapsed && <span>{t.logout}</span>}
-          </button>
-        ) : (
-          <NavLink
-            to="/login"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '12px 16px',
-              borderRadius: 'var(--border-radius-sm)',
-              color: '#ffffff',
-              backgroundColor: 'var(--primary)',
-              textDecoration: 'none',
-              fontWeight: 600,
-              fontSize: '15px',
-              textAlign: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 14px var(--primary-glow)',
-            }}
-          >
-            {!collapsed ? <span>{t.login}</span> : <Compass size={20} />}
-          </NavLink>
-        )}
-      </div>
+      {/* Auth user foot info (Moved to TopBar) */}
+      <div style={{ marginTop: 'auto' }}></div>
     </aside>
   );
 };

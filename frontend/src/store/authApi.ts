@@ -49,6 +49,21 @@ export const authApi = api.injectEndpoints({
         body: data,
       }),
     }),
+    updateRequestTerms: builder.mutation<User, FormData>({
+      query: (formData) => ({
+        url: '/auth/request-terms',
+        method: 'PUT',
+        body: formData,
+      }),
+      invalidatesTags: (result) => ['User', { type: 'User', id: result?._id }],
+    }),
+    deleteRequestTerms: builder.mutation<User, void>({
+      query: () => ({
+        url: '/auth/request-terms',
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result) => ['User', { type: 'User', id: result?._id }],
+    }),
   }),
 });
 
@@ -60,4 +75,6 @@ export const {
   useUpdateProfileMutation,
   useGetRecommendedArtistsQuery,
   useChangePasswordMutation,
+  useUpdateRequestTermsMutation,
+  useDeleteRequestTermsMutation,
 } = authApi;

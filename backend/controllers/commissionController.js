@@ -14,8 +14,8 @@ export const createCommission = async (req, res) => {
     }
 
     const artist = await User.findById(artistId);
-    if (!artist || !artist.isArtist) {
-      return res.status(400).json({ message: 'Selected user is not registered as an artist' });
+    if (!artist || (!artist.isArtist && (!artist.requestTerms || !artist.requestTerms.hasTerms))) {
+      return res.status(400).json({ message: 'Selected user is not open for commission' });
     }
 
     if (artistId.toString() === clientId.toString()) {

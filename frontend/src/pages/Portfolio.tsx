@@ -29,6 +29,7 @@ export const Portfolio = () => {
   
   // Commission Modal State
   const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [commTitle, setCommTitle] = useState('');
   const [commDesc, setCommDesc] = useState('');
   const [commPrice, setCommPrice] = useState(100000); // 100k VND base
@@ -200,10 +201,10 @@ export const Portfolio = () => {
             <div style={{ paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '24px', fontWeight: 800 }}>{profileUser.nickname}</h2>
-                {profileUser.isArtist && (
+                {profileUser.requestTerms?.hasTerms && (
                   <span
                     style={{
-                      backgroundColor: 'var(--primary)',
+                      backgroundColor: 'var(--success)',
                       color: '#ffffff',
                       fontSize: '11px',
                       fontWeight: 800,
@@ -212,11 +213,11 @@ export const Portfolio = () => {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
-                      boxShadow: '0 0 10px var(--primary-glow)',
+                      boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)',
                     }}
                   >
                     <Award size={12} />
-                    Artist
+                    {language === 'en' ? 'Open for Commission' : 'Nhận đặt vẽ'}
                   </span>
                 )}
               </div>
@@ -244,17 +245,17 @@ export const Portfolio = () => {
                   <Mail size={16} />
                   Nhắn tin
                 </button>
-                {profileUser.isArtist && (
+                {profileUser.requestTerms?.hasTerms && (
                   <button
                     onClick={() => {
                       if (!user) navigate('/login');
-                      else setShowCommissionModal(true);
+                      else setShowTermsPopup(true);
                     }}
                     className="btn btn-accent"
                     style={{ borderRadius: '20px', padding: '10px 24px' }}
                   >
                     <Briefcase size={16} />
-                    {t.commissionMe}
+                    {language === 'en' ? 'View Request Terms' : 'Xem ĐK nhận vẽ'}
                   </button>
                 )}
               </>
@@ -524,6 +525,201 @@ export const Portfolio = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pixiv-inspired Request Terms View Popup Modal */}
+      {showTermsPopup && profileUser?.requestTerms?.hasTerms && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(10, 11, 16, 0.85)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '24px',
+          }}
+        >
+          <div
+            className="glass-panel animate-fade-in"
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              borderRadius: 'var(--border-radius-lg)',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--glass-border)',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: 'var(--card-shadow)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* 1. Cover Header Section */}
+            <div
+              style={{
+                height: '180px',
+                backgroundColor: 'var(--bg-tertiary)',
+                backgroundImage: profileUser.requestTerms.backgroundUrl
+                  ? `url(${profileUser.requestTerms.backgroundUrl.startsWith('http') ? profileUser.requestTerms.backgroundUrl : `${API_BASE_URL}${profileUser.requestTerms.backgroundUrl}`})`
+                  : 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                position: 'relative'
+              }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowTermsPopup(false)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'rgba(10, 11, 16, 0.6)',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* Avatar Overlay */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '-32px',
+                  left: '32px',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  gap: '12px'
+                }}
+              >
+                <img
+                  src={getImageUrl(profileUser.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + profileUser.username}
+                  alt={profileUser.nickname}
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '3px solid var(--bg-secondary)',
+                    backgroundColor: 'var(--bg-secondary)'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 2. Details Content Section */}
+            <div
+              style={{
+                padding: '48px 32px 32px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                flex: 1
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    color: 'var(--primary)',
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}
+                >
+                  Điều khoản đặt vẽ tranh
+                </span>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {profileUser.requestTerms.title}
+                </h2>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  bởi @{profileUser.username}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  borderTop: '1px solid var(--glass-border)',
+                  paddingTop: '16px',
+                  fontSize: '14px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {profileUser.requestTerms.details}
+              </div>
+
+              {/* Target price display banner */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(20, 184, 166, 0.05)',
+                  border: '1px solid rgba(20, 184, 166, 0.1)',
+                  padding: '16px 20px',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '8px'
+                }}
+              >
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  Giá khởi điểm tối thiểu đề xuất:
+                </span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent)' }}>
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profileUser.requestTerms.targetPrice)}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Action Footer Section */}
+            <div
+              style={{
+                padding: '20px 32px',
+                borderTop: '1px solid var(--glass-border)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                backgroundColor: 'rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <button
+                onClick={() => setShowTermsPopup(false)}
+                className="btn btn-secondary"
+                style={{ borderRadius: '20px' }}
+              >
+                Đóng lại
+              </button>
+              <button
+                onClick={() => {
+                  setShowTermsPopup(false);
+                  setShowCommissionModal(true);
+                }}
+                className="btn btn-accent"
+                style={{ borderRadius: '20px', padding: '10px 28px' }}
+              >
+                <Briefcase size={16} />
+                Đặt vẽ tranh ngay
+              </button>
+            </div>
           </div>
         </div>
       )}

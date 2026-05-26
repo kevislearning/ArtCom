@@ -18,7 +18,6 @@ export const SettingsPage = () => {
   const [twitter, setTwitter] = useState(user?.socialLinks?.twitter || '');
   const [behance, setBehance] = useState(user?.socialLinks?.behance || '');
   const [artstation, setArtstation] = useState(user?.socialLinks?.artstation || '');
-  const [isArtist, setIsArtist] = useState(user?.isArtist || false);
 
   // File states
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -71,7 +70,6 @@ export const SettingsPage = () => {
     
     const socialLinks = { twitter, behance, artstation };
     formData.append('socialLinks', JSON.stringify(socialLinks));
-    formData.append('isArtist', String(isArtist));
 
     if (avatarFile) {
       formData.append('avatar', avatarFile);
@@ -299,18 +297,7 @@ export const SettingsPage = () => {
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                <input
-                  type="checkbox"
-                  id="isArtist"
-                  checked={isArtist}
-                  onChange={(e) => setIsArtist(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                />
-                <label htmlFor="isArtist" style={{ fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
-                  {t.isArtist}
-                </label>
-              </div>
+              <div></div>
             </div>
 
             {/* Social Links */}

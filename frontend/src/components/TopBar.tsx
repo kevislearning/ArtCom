@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
   Bell,
   Wallet,
-  Menu,
   CheckCircle,
   Plus,
+  LogOut,
+  Image,
 } from 'lucide-react';
 import type { RootState } from '../store';
 import {
@@ -18,16 +19,15 @@ import {
 import { useGetWalletBalanceQuery } from '../store/walletApi';
 import { translations } from '../utils/translation';
 import { getImageUrl } from '../utils/url';
+import { logout } from '../store/authSlice';
+import { useLogoutMutation } from '../store/authApi';
+import { disconnectSocket } from '../utils/socket';
 
 
-interface TopBarProps {
-  collapsed: boolean;
-  setCollapsed: (c: boolean) => void;
-}
-
-export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
+export const TopBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
@@ -36,6 +36,21 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
   const [showNotif, setShowNotif] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [triggerLogout] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await triggerLogout().unwrap();
+      dispatch(logout());
+      disconnectSocket();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+      dispatch(logout());
+      navigate('/login');
+    }
+  };
 
   // Queries
   const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
@@ -122,23 +137,43 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
         backdropFilter: 'blur(16px)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
+      {/* Left Column: Website Logo & Name */}
+      <div
+        onClick={() => navigate('/')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          cursor: 'pointer',
+          color: 'var(--primary)',
+          width: '25%',
+          minWidth: '150px'
+        }}
+      >
+        <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
+        <span
           style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '4px',
+            fontWeight: 800,
+            fontSize: '20px',
+            letterSpacing: '0.5px',
+            background: 'linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
           }}
         >
-          <Menu size={24} />
-        </button>
+          ArtCom
+        </span>
+      </div>
 
-        {/* Global Search Bar */}
+      {/* Center Column: Centered Search Bar */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
         <form
           onSubmit={handleSearchSubmit}
           style={{
@@ -175,7 +210,8 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
         </form>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      {/* Right Column: User Info, Wallet, Notifications & Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', justifyContent: 'flex-end', width: '40%' }}>
         {/* Wallet Balance Widget */}
         {user && (
           <div
@@ -223,8 +259,6 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
             <span>{language === 'vn' ? 'Đăng tác phẩm' : 'Upload Art'}</span>
           </button>
         )}
-
-
 
         {/* Notification indicator */}
         {user && (
@@ -370,6 +404,81 @@ export const TopBar = ({ collapsed, setCollapsed }: TopBarProps) => {
               </div>
             )}
           </div>
+        )}
+        {/* Notification indicator (ends above) */}
+
+        {/* User profile avatar, nickname, and Login/Logout buttons */}
+        {user ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              onClick={() => navigate(`/portfolio/${user._id}`)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                transition: 'opacity var(--transition-fast)'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              <img
+                src={getImageUrl(user.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + user.username}
+                alt={user.nickname}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid var(--glass-border)',
+                  backgroundColor: 'var(--bg-tertiary)',
+                }}
+              />
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px' }}>
+                {user.nickname}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '20px',
+                color: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                border: '1px solid rgba(239, 68, 68, 0.15)',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '13px',
+                transition: 'all var(--transition-fast)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+              }}
+            >
+              <LogOut size={14} />
+              <span>{t.logout}</span>
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="btn btn-primary animate-fade-in"
+            style={{
+              borderRadius: '20px',
+              padding: '8px 20px',
+              fontSize: '13px',
+              fontWeight: 700,
+              boxShadow: '0 4px 14px var(--primary-glow)',
+            }}
+          >
+            {t.login}
+          </button>
         )}
       </div>
     </header>
