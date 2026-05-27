@@ -1,6 +1,6 @@
 import express from 'express';
 import { register, login, logout, getMe, getPublicProfile, updateProfile, getRecommendedArtists, changePassword, updateRequestTerms, deleteRequestTerms } from '../controllers/authController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
@@ -9,7 +9,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
-router.get('/profile/:id', getPublicProfile);
+router.get('/profile/:id', optionalProtect, getPublicProfile);
 router.get('/artists/recommended', getRecommendedArtists);
 
 router.put(

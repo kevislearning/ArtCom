@@ -22,6 +22,31 @@ export interface User {
     behance?: string;
     artstation?: string;
   };
+  website?: {
+    value: string;
+    isPublic: boolean;
+  };
+  customSocialLinks?: Array<{
+    platform: string;
+    username: string;
+    isPublic: boolean;
+  }>;
+  gender?: {
+    value: 'male' | 'female' | 'other';
+    isPublic: boolean;
+  };
+  country?: {
+    value: string;
+    isPublic: boolean;
+  };
+  birthday?: {
+    value: string | null;
+    isPublic: boolean;
+  };
+  occupation?: {
+    value: string;
+    isPublic: boolean;
+  };
   totalViews?: number;
   totalLikes?: number;
   totalBookmarks?: number;

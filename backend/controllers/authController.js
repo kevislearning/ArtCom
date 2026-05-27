@@ -32,6 +32,12 @@ const sendTokenResponse = (user, statusCode, res) => {
     requestTerms: user.requestTerms,
     walletBalance: user.walletBalance,
     socialLinks: user.socialLinks,
+    website: user.website,
+    customSocialLinks: user.customSocialLinks,
+    gender: user.gender,
+    country: user.country,
+    birthday: user.birthday,
+    occupation: user.occupation,
     totalViews: user.totalViews,
     totalLikes: user.totalLikes,
     totalBookmarks: user.totalBookmarks,
@@ -132,7 +138,32 @@ export const getPublicProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User profile not found' });
     }
-    res.status(200).json(user);
+
+    const userObj = user.toObject();
+    const isMe = req.user && req.user.id === req.params.id;
+
+    if (!isMe) {
+      if (userObj.website && !userObj.website.isPublic) {
+        userObj.website = { value: '', isPublic: false };
+      }
+      if (userObj.gender && !userObj.gender.isPublic) {
+        userObj.gender = { value: 'other', isPublic: false };
+      }
+      if (userObj.country && !userObj.country.isPublic) {
+        userObj.country = { value: '', isPublic: false };
+      }
+      if (userObj.birthday && !userObj.birthday.isPublic) {
+        userObj.birthday = { value: null, isPublic: false };
+      }
+      if (userObj.occupation && !userObj.occupation.isPublic) {
+        userObj.occupation = { value: '', isPublic: false };
+      }
+      if (userObj.customSocialLinks) {
+        userObj.customSocialLinks = userObj.customSocialLinks.filter(link => link.isPublic);
+      }
+    }
+
+    res.status(200).json(userObj);
   } catch (error) {
     console.error('[Public Profile Error]', error);
     res.status(500).json({ message: 'Server error' });
@@ -146,19 +177,65 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const { nickname, bio, socialLinks, isArtist } = req.body;
+    const {
+      nickname,
+      bio,
+      socialLinks,
+      isArtist,
+      website,
+      gender,
+      country,
+      birthday,
+      occupation,
+      customSocialLinks
+    } = req.body;
+
+    const parseField = (field) => {
+      if (!field) return undefined;
+      try {
+        return typeof field === 'string' ? JSON.parse(field) : field;
+      } catch (err) {
+        return field;
+      }
+    };
 
     if (nickname) user.nickname = nickname;
     if (bio !== undefined) user.bio = bio;
+    
     if (socialLinks) {
+      const parsedSocial = parseField(socialLinks);
       user.socialLinks = {
         ...user.socialLinks,
-        ...socialLinks,
+        ...parsedSocial,
       };
     }
+    
     if (isArtist !== undefined) {
       user.isArtist = isArtist === 'true' || isArtist === true;
     }
+
+    const parsedWebsite = parseField(website);
+    if (parsedWebsite !== undefined) user.website = parsedWebsite;
+
+    const parsedGender = parseField(gender);
+    if (parsedGender !== undefined) user.gender = parsedGender;
+
+    const parsedCountry = parseField(country);
+    if (parsedCountry !== undefined) user.country = parsedCountry;
+
+    const parsedBirthday = parseField(birthday);
+    if (parsedBirthday !== undefined) {
+      user.birthday = {
+        value: parsedBirthday.value ? new Date(parsedBirthday.value) : null,
+        isPublic: parsedBirthday.isPublic ?? true,
+      };
+    }
+
+    const parsedOccupation = parseField(occupation);
+    if (parsedOccupation !== undefined) user.occupation = parsedOccupation;
+
+    const parsedCustomSocialLinks = parseField(customSocialLinks);
+    if (parsedCustomSocialLinks !== undefined) user.customSocialLinks = parsedCustomSocialLinks;
 
     // Handle uploaded file URLs (avatar or banner) if Multer saves them
     if (req.files) {

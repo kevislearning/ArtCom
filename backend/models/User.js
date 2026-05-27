@@ -60,6 +60,33 @@ const userSchema = new mongoose.Schema(
       behance: { type: String, default: '' },
       artstation: { type: String, default: '' },
     },
+    website: {
+      value: { type: String, default: '' },
+      isPublic: { type: Boolean, default: true },
+    },
+    customSocialLinks: [
+      {
+        platform: { type: String, default: '' },
+        username: { type: String, default: '' },
+        isPublic: { type: Boolean, default: true },
+      }
+    ],
+    gender: {
+      value: { type: String, default: 'other' },
+      isPublic: { type: Boolean, default: true },
+    },
+    country: {
+      value: { type: String, default: '' },
+      isPublic: { type: Boolean, default: true },
+    },
+    birthday: {
+      value: { type: Date, default: null },
+      isPublic: { type: Boolean, default: true },
+    },
+    occupation: {
+      value: { type: String, default: '' },
+      isPublic: { type: Boolean, default: true },
+    },
     totalViews: {
       type: Number,
       default: 0,

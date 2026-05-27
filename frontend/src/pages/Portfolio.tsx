@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   Mail,
   UserPlus,
   Briefcase,
   Award,
   X,
+  Settings,
+  Edit,
+  Plus,
+  Trash2,
+  Globe,
+  Calendar,
+  MapPin,
+  User,
+  Lock,
+  Camera,
+  Save,
+  Upload,
+  MessageSquare,
+  Heart,
+  Link2,
 } from 'lucide-react';
 import type { RootState } from '../store';
 import { translations } from '../utils/translation';
-import { useGetPublicProfileQuery } from '../store/authApi';
+import { useGetPublicProfileQuery, useUpdateProfileMutation } from '../store/authApi';
+import { updateUser } from '../store/authSlice';
 import { useGetIllustrationsQuery } from '../store/illustrationApi';
 import { useToggleFollowMutation, useCheckFollowStatusQuery } from '../store/followApi';
 import { useCreateCommissionMutation } from '../store/commissionApi';
@@ -18,9 +34,24 @@ import { ArtworkCard } from '../components/ArtworkCard';
 import { getImageUrl } from '../utils/url';
 
 
+const getPlatformIcon = (platform: string) => {
+  switch (platform.toLowerCase()) {
+    case 'instagram': return Camera;
+    case 'discord': return MessageSquare;
+    case 'patreon': return Heart;
+    case 'deviantart': return Award;
+    case 'facebook':
+    case 'youtube':
+    case 'twitter':
+    case 'twitter/x':
+    default: return Link2;
+  }
+};
+
 export const Portfolio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
@@ -36,6 +67,123 @@ export const Portfolio = () => {
   const [commDeadline, setCommDeadline] = useState('');
   const [commPrivate, setCommPrivate] = useState(false);
   const [commError, setCommError] = useState('');
+
+  // Edit Profile Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [nicknameVal, setNicknameVal] = useState('');
+  const [bioVal, setBioVal] = useState('');
+  const [websiteVal, setWebsiteVal] = useState('');
+  const [websitePublic, setWebsitePublic] = useState(true);
+  const [genderVal, setGenderVal] = useState('other');
+  const [genderPublic, setGenderPublic] = useState(true);
+  const [countryVal, setCountryVal] = useState('');
+  const [countryPublic, setCountryPublic] = useState(true);
+  const [birthdayVal, setBirthdayVal] = useState('');
+  const [birthdayPublic, setBirthdayPublic] = useState(true);
+  const [occupationVal, setOccupationVal] = useState('');
+  const [occupationPublic, setOccupationPublic] = useState(true);
+  const [customSocialLinks, setCustomSocialLinks] = useState<any[]>([]);
+
+  // Avatar & Banner edit states
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [bannerPreview, setBannerPreview] = useState('');
+
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+
+  const handleOpenEditModal = () => {
+    if (!profileUser) return;
+    setNicknameVal(profileUser.nickname || '');
+    setBioVal(profileUser.bio || '');
+    setWebsiteVal(profileUser.website?.value || '');
+    setWebsitePublic(profileUser.website?.isPublic ?? true);
+    setGenderVal(profileUser.gender?.value || 'other');
+    setGenderPublic(profileUser.gender?.isPublic ?? true);
+    setCountryVal(profileUser.country?.value || '');
+    setCountryPublic(profileUser.country?.isPublic ?? true);
+    setBirthdayVal(profileUser.birthday?.value ? new Date(profileUser.birthday.value).toISOString().split('T')[0] : '');
+    setBirthdayPublic(profileUser.birthday?.isPublic ?? true);
+    setOccupationVal(profileUser.occupation?.value || '');
+    setOccupationPublic(profileUser.occupation?.isPublic ?? true);
+    setCustomSocialLinks(profileUser.customSocialLinks || []);
+    setAvatarPreview(profileUser.avatarUrl || '');
+    setBannerPreview(profileUser.bannerUrl || '');
+    setAvatarFile(null);
+    setBannerFile(null);
+    setEditError('');
+    setEditSuccess('');
+    setShowEditModal(true);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setBannerFile(file);
+      setBannerPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAddSocialLink = () => {
+    setCustomSocialLinks([...customSocialLinks, { platform: 'Facebook', username: '', isPublic: true }]);
+  };
+
+  const handleSocialLinkChange = (index: number, field: string, val: any) => {
+    const updated = [...customSocialLinks];
+    updated[index] = { ...updated[index], [field]: val };
+    setCustomSocialLinks(updated);
+  };
+
+  const handleRemoveSocialLink = (index: number) => {
+    setCustomSocialLinks(customSocialLinks.filter((_, idx) => idx !== index));
+  };
+
+  const handleSaveEditProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+    setEditSuccess('');
+
+    const formData = new FormData();
+    formData.append('nickname', nicknameVal.trim());
+    formData.append('bio', bioVal.trim());
+    
+    formData.append('website', JSON.stringify({ value: websiteVal.trim(), isPublic: websitePublic }));
+    formData.append('gender', JSON.stringify({ value: genderVal, isPublic: genderPublic }));
+    formData.append('country', JSON.stringify({ value: countryVal.trim(), isPublic: countryPublic }));
+    formData.append('birthday', JSON.stringify({ value: birthdayVal ? new Date(birthdayVal) : null, isPublic: birthdayPublic }));
+    formData.append('occupation', JSON.stringify({ value: occupationVal.trim(), isPublic: occupationPublic }));
+    formData.append('customSocialLinks', JSON.stringify(customSocialLinks));
+
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
+    if (bannerFile) {
+      formData.append('banner', bannerFile);
+    }
+
+    try {
+      const updated = await updateProfile(formData).unwrap();
+      dispatch(updateUser(updated));
+      setEditSuccess('Cập nhật thông tin trang cá nhân thành công!');
+      setTimeout(() => {
+        setShowEditModal(false);
+      }, 1000);
+    } catch (err: any) {
+      console.error(err);
+      setEditError(err.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin!');
+    }
+  };
 
   // Queries
   const { data: profileUser, isLoading: loadingProfile } = useGetPublicProfileQuery(id || '');
@@ -227,6 +375,16 @@ export const Portfolio = () => {
 
           {/* Action triggers */}
           <div style={{ display: 'flex', gap: '12px', paddingBottom: '8px' }}>
+            {isMe && (
+              <button
+                onClick={handleOpenEditModal}
+                className="btn btn-primary"
+                style={{ borderRadius: '20px', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Settings size={16} />
+                Chỉnh sửa trang cá nhân
+              </button>
+            )}
             {!isMe && (
               <>
                 <button
@@ -277,9 +435,120 @@ export const Portfolio = () => {
         >
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '8px' }}>{t.bio}</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '20px' }}>
               {profileUser.bio || 'Người dùng này chưa viết lời giới thiệu trang cá nhân.'}
             </p>
+
+            {/* Thêm phần thông tin chi tiết dưới Bio */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>Thông tin chi tiết</h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }} className="profile-info-grid">
+                {/* Website */}
+                {(profileUser.website?.value || (isMe && profileUser.website?.value === '')) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <Globe size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Website:</span>
+                    {profileUser.website.value ? (
+                      <a href={profileUser.website.value.startsWith('http') ? profileUser.website.value : `https://${profileUser.website.value}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                        {profileUser.website.value}
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa thiết lập</span>
+                    )}
+                    {isMe && !profileUser.website.isPublic && (
+                      <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)' }} title="Chỉ mình bạn nhìn thấy">
+                        <Lock size={10} /> Riêng tư
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Giới tính */}
+                {(profileUser.gender?.value || (isMe && profileUser.gender?.value === 'other')) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <User size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Giới tính:</span>
+                    <span>
+                      {profileUser.gender.value === 'male' ? 'Nam' : profileUser.gender.value === 'female' ? 'Nữ' : profileUser.gender.value === 'other' ? 'Khác' : 'Khác'}
+                    </span>
+                    {isMe && !profileUser.gender.isPublic && (
+                      <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)' }} title="Chỉ mình bạn nhìn thấy">
+                        <Lock size={10} /> Riêng tư
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Quốc gia */}
+                {(profileUser.country?.value || (isMe && profileUser.country?.value === '')) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <MapPin size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Quốc gia:</span>
+                    <span>{profileUser.country.value || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa thiết lập</span>}</span>
+                    {isMe && !profileUser.country.isPublic && (
+                      <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)' }} title="Chỉ mình bạn nhìn thấy">
+                        <Lock size={10} /> Riêng tư
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Ngày sinh */}
+                {(profileUser.birthday?.value || (isMe && !profileUser.birthday?.value)) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <Calendar size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Ngày sinh:</span>
+                    <span>
+                      {profileUser.birthday?.value ? new Date(profileUser.birthday.value).toLocaleDateString('vi-VN') : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa thiết lập</span>}
+                    </span>
+                    {isMe && !profileUser.birthday?.isPublic && (
+                      <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)' }} title="Chỉ mình bạn nhìn thấy">
+                        <Lock size={10} /> Riêng tư
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Nghề nghiệp */}
+                {(profileUser.occupation?.value || (isMe && profileUser.occupation?.value === '')) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <Briefcase size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Nghề nghiệp:</span>
+                    <span>{profileUser.occupation.value || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa thiết lập</span>}</span>
+                    {isMe && !profileUser.occupation.isPublic && (
+                      <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)' }} title="Chỉ mình bạn nhìn thấy">
+                        <Lock size={10} /> Riêng tư
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Custom Social Links */}
+              {profileUser.customSocialLinks && profileUser.customSocialLinks.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>Mạng xã hội liên kết:</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                    {profileUser.customSocialLinks.map((link: any, idx: number) => {
+                      const PlatformIcon = getPlatformIcon(link.platform);
+                      return (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-tertiary)', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--glass-border)', fontSize: '13px' }}>
+                          <PlatformIcon size={14} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontWeight: 600 }}>{link.platform}:</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{link.username}</span>
+                          {isMe && !link.isPublic && (
+                            <span style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', marginLeft: '4px' }} title="Riêng tư">
+                              <Lock size={10} />
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div
@@ -720,6 +989,445 @@ export const Portfolio = () => {
                 Đặt vẽ tranh ngay
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Edit Profile Popup Modal */}
+      {showEditModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(10, 11, 16, 0.85)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '24px',
+          }}
+        >
+          <div
+            className="glass-panel animate-fade-in"
+            style={{
+              maxWidth: '700px',
+              width: '100%',
+              borderRadius: 'var(--border-radius-lg)',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--glass-border)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              boxShadow: 'var(--card-shadow)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 32px',
+                borderBottom: '1px solid var(--glass-border)',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: 'var(--bg-secondary)',
+                zIndex: 110,
+              }}
+            >
+              <h2 style={{ fontSize: '20px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit size={20} style={{ color: 'var(--primary)' }} />
+                Chỉnh sửa trang cá nhân
+              </h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveEditProfile} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {editError && (
+                <div style={{ color: 'var(--danger)', fontSize: '13px', fontWeight: 600, backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '12px 16px', borderRadius: '6px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                  {editError}
+                </div>
+              )}
+              {editSuccess && (
+                <div style={{ color: 'var(--success)', fontSize: '13px', fontWeight: 600, backgroundColor: 'rgba(16, 185, 129, 0.08)', padding: '12px 16px', borderRadius: '6px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
+                  {editSuccess}
+                </div>
+              )}
+
+              {/* 1. Banner Cover & Avatar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700 }}>Ảnh bìa trang cá nhân</label>
+                <div
+                  style={{
+                    height: '140px',
+                    borderRadius: 'var(--border-radius-sm)',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    position: 'relative',
+                    backgroundImage: bannerPreview
+                      ? `url(${bannerPreview.startsWith('blob') || bannerPreview.startsWith('http') ? bannerPreview : `${API_BASE_URL}${bannerPreview}`})`
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    border: '1px solid var(--glass-border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(10, 11, 16, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <label
+                      style={{
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backgroundColor: 'rgba(10, 11, 16, 0.75)',
+                        padding: '8px 16px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#ffffff',
+                        border: '1px solid var(--glass-border)',
+                      }}
+                    >
+                      <Camera size={14} />
+                      Thay đổi ảnh bìa
+                      <input type="file" accept="image/*" onChange={handleBannerChange} style={{ display: 'none' }} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={getImageUrl(avatarPreview) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + profileUser.username}
+                    alt="avatar"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid var(--bg-secondary)',
+                      backgroundColor: 'var(--bg-secondary)',
+                    }}
+                  />
+                  <label
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      backgroundColor: 'var(--primary)',
+                      color: '#ffffff',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px var(--primary-glow)',
+                    }}
+                  >
+                    <Upload size={12} />
+                    <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+                  </label>
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Ảnh đại diện</h4>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tải ảnh đại diện để nhận diện cá nhân của bạn.</p>
+                </div>
+              </div>
+
+              {/* 2. Nickname & Bio */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700 }}>Biệt danh *</label>
+                  <input
+                    type="text"
+                    className="glass-input"
+                    value={nicknameVal}
+                    onChange={(e) => setNicknameVal(e.target.value)}
+                    placeholder="Nhập biệt danh..."
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700 }}>Giới thiệu bản thân</label>
+                  <textarea
+                    className="glass-input"
+                    rows={3}
+                    value={bioVal}
+                    onChange={(e) => setBioVal(e.target.value)}
+                    placeholder="Viết một vài dòng giới thiệu về bản thân..."
+                    style={{ resize: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* 3. Website & Privacy */}
+              <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Website cá nhân</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="glass-input"
+                    value={websiteVal}
+                    onChange={(e) => setWebsiteVal(e.target.value)}
+                    placeholder="https://mywebsite.com"
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      id="websitePublic"
+                      checked={websitePublic}
+                      onChange={(e) => setWebsitePublic(e.target.checked)}
+                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="websitePublic" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Công khai</label>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Custom Social Links */}
+              <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Liên kết mạng xã hội khác</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddSocialLink}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Plus size={12} /> Thêm liên kết
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {customSocialLinks.map((link, idx) => (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr auto auto', gap: '12px', alignItems: 'center' }}>
+                      <select
+                        className="glass-input"
+                        value={link.platform}
+                        onChange={(e) => handleSocialLinkChange(idx, 'platform', e.target.value)}
+                        style={{ height: '38px', padding: '0 8px' }}
+                      >
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Twitter/X">Twitter/X</option>
+                        <option value="YouTube">YouTube</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Discord">Discord</option>
+                        <option value="Pinterest">Pinterest</option>
+                        <option value="DeviantArt">DeviantArt</option>
+                        <option value="Patreon">Patreon</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+
+                      <input
+                        type="text"
+                        className="glass-input"
+                        value={link.username}
+                        onChange={(e) => handleSocialLinkChange(idx, 'username', e.target.value)}
+                        placeholder="Tên tài khoản hoặc URL..."
+                        style={{ height: '38px' }}
+                      />
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id={`social-pub-${idx}`}
+                          checked={link.isPublic}
+                          onChange={(e) => handleSocialLinkChange(idx, 'isPublic', e.target.checked)}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                        />
+                        <label htmlFor={`social-pub-${idx}`} style={{ fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Công khai</label>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSocialLink(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--danger)',
+                          cursor: 'pointer',
+                          padding: '6px',
+                        }}
+                        title="Xóa liên kết"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  {customSocialLinks.length === 0 && (
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+                      Chưa thêm mạng xã hội liên kết.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 5. Additional Personal Information */}
+              <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Thông tin cá nhân bổ sung</h4>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }} className="social-links-grid">
+                  {/* Giới tính */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 700 }}>Giới tính</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="genderPublic"
+                          checked={genderPublic}
+                          onChange={(e) => setGenderPublic(e.target.checked)}
+                          style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
+                        />
+                        <label htmlFor="genderPublic" style={{ fontSize: '11px', fontWeight: 600 }}>Công khai</label>
+                      </div>
+                    </div>
+                    <select
+                      className="glass-input"
+                      value={genderVal}
+                      onChange={(e) => setGenderVal(e.target.value)}
+                      style={{ height: '40px' }}
+                    >
+                      <option value="male">Nam</option>
+                      <option value="female">Nữ</option>
+                      <option value="other">Khác</option>
+                    </select>
+                  </div>
+
+                  {/* Quốc gia */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 700 }}>Quốc gia</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="countryPublic"
+                          checked={countryPublic}
+                          onChange={(e) => setCountryPublic(e.target.checked)}
+                          style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
+                        />
+                        <label htmlFor="countryPublic" style={{ fontSize: '11px', fontWeight: 600 }}>Công khai</label>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      value={countryVal}
+                      onChange={(e) => setCountryVal(e.target.value)}
+                      placeholder="Việt Nam, Nhật Bản..."
+                    />
+                  </div>
+
+                  {/* Ngày sinh */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 700 }}>Ngày sinh</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="birthdayPublic"
+                          checked={birthdayPublic}
+                          onChange={(e) => setBirthdayPublic(e.target.checked)}
+                          style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
+                        />
+                        <label htmlFor="birthdayPublic" style={{ fontSize: '11px', fontWeight: 600 }}>Công khai</label>
+                      </div>
+                    </div>
+                    <input
+                      type="date"
+                      className="glass-input"
+                      value={birthdayVal}
+                      onChange={(e) => setBirthdayVal(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Nghề nghiệp */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 700 }}>Nghề nghiệp</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="occupationPublic"
+                          checked={occupationPublic}
+                          onChange={(e) => setOccupationPublic(e.target.checked)}
+                          style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
+                        />
+                        <label htmlFor="occupationPublic" style={{ fontSize: '11px', fontWeight: 600 }}>Công khai</label>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      value={occupationVal}
+                      onChange={(e) => setOccupationVal(e.target.value)}
+                      placeholder="Họa sĩ tự do, Thiết kế đồ họa..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '12px',
+                  borderTop: '1px solid var(--glass-border)',
+                  paddingTop: '20px',
+                  marginTop: '12px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="btn btn-secondary"
+                  disabled={isUpdatingProfile}
+                >
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isUpdatingProfile}>
+                  <Save size={16} />
+                  {isUpdatingProfile ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
