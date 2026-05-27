@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -61,16 +62,19 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is healthy' });
 });
 
-// Single-Service Deployability: Serve React frontend static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// Serving React frontend static files in production (only if dist folder exists)
+const distPath = path.join(__dirname, '../frontend/dist');
+if (process.env.NODE_ENV === 'production' && fs.existsSync(distPath)) {
+  console.log('[Server] Production mode: Serving React frontend static files.');
+  app.use(express.static(distPath));
   
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
+    res.sendFile(path.resolve(distPath, 'index.html'));
   });
 } else {
+  console.log('[Server] API mode: Running standalone backend service.');
   app.get('/', (req, res) => {
-    res.send('API is running successfully in development mode...');
+    res.send('API is running successfully...');
   });
 }
 

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { uploadFileToCloudinary } from '../utils/cloudinary.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -15,7 +16,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   };
 
   res.cookie('token', token, cookieOptions);
@@ -115,6 +116,8 @@ export const logout = (req, res) => {
   res.cookie('token', '', {
     httpOnly: true,
     expires: new Date(0),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
   res.status(200).json({ message: 'Successfully logged out' });
 };
@@ -240,10 +243,10 @@ export const updateProfile = async (req, res) => {
     // Handle uploaded file URLs (avatar or banner) if Multer saves them
     if (req.files) {
       if (req.files.avatar && req.files.avatar[0]) {
-        user.avatarUrl = `/uploads/${req.files.avatar[0].filename}`;
+        user.avatarUrl = await uploadFileToCloudinary(req.files.avatar[0]);
       }
       if (req.files.banner && req.files.banner[0]) {
-        user.bannerUrl = `/uploads/${req.files.banner[0].filename}`;
+        user.bannerUrl = await uploadFileToCloudinary(req.files.banner[0]);
       }
     }
 
@@ -316,7 +319,7 @@ export const updateRequestTerms = async (req, res) => {
     };
 
     if (req.file) {
-      user.requestTerms.backgroundUrl = `/uploads/${req.file.filename}`;
+      user.requestTerms.backgroundUrl = await uploadFileToCloudinary(req.file);
     }
 
     user.isArtist = true; // Sync for compatibility

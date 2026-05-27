@@ -1,9 +1,12 @@
+import fs from 'fs';
 import Illustration from '../models/Illustration.js';
 import User from '../models/User.js';
 import Like from '../models/Like.js';
 import Bookmark from '../models/Bookmark.js';
 import Follow from '../models/Follow.js';
 import { notificationService } from '../services/notificationService.js';
+import { uploadMultipleToCloudinary } from '../utils/cloudinary.js';
+
 
 /**
  * Helper to update user denormalized interaction statistics
@@ -25,14 +28,12 @@ const updateArtistStats = async (artistId) => {
 
 export const createIllustration = async (req, res) => {
   try {
-    const { title, description, tags, visibility, commentsEnabled } = req.body;
+    const { title, description, tags, visibility, commentsEnabled, isAIGenerated } = req.body;
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'At least one image file is required' });
     }
 
-    const imageUrls = req.files.map((file) => `/uploads/${file.filename}`);
-    
     // Parse tags if sent as stringified JSON or comma-separated
     let parsedTags = [];
     if (tags) {
@@ -43,6 +44,73 @@ export const createIllustration = async (req, res) => {
       }
     }
 
+    let isAIDetected = false;
+    let aiProbability = 0;
+
+    const userDeclaredAI = isAIGenerated === 'true' || isAIGenerated === true;
+
+    // Call Hugging Face API to detect AI if user did not declare it
+    if (!userDeclaredAI && req.files && req.files[0]) {
+      console.log(`[Hugging Face Scan] Đang tiến hành quét tác phẩm "${title}" bằng AI Image Detector...`);
+      try {
+        const imageBuffer = fs.readFileSync(req.files[0].path);
+        
+        let result = null;
+        const hfToken = process.env.HF_TOKEN;
+
+        if (hfToken) {
+          try {
+            console.log('[Hugging Face Scan] Gửi request đến Inference API Router...');
+            const response = await fetch(
+              "https://router.huggingface.co/hf-inference/models/umm-maybe/AI-image-detector",
+              {
+                headers: {
+                  Authorization: `Bearer ${hfToken}`,
+                  "Content-Type": "image/jpeg",
+                },
+                method: "POST",
+                body: imageBuffer,
+              }
+            );
+
+            if (response.ok) {
+              result = await response.json();
+              console.log('[Hugging Face Scan] Nhận kết quả thành công:', JSON.stringify(result, null, 2));
+            } else {
+              const errText = await response.text();
+              console.error(`[Hugging Face Router Failed] Status: ${response.status}. Error: ${errText.substring(0, 200)}`);
+            }
+          } catch (fetchErr) {
+            console.error('[Hugging Face Fetch Error]', fetchErr.message);
+          }
+        } else {
+          console.warn('[Hugging Face Auth Failed] Không tìm thấy HF_TOKEN trong .env.');
+        }
+
+        if (Array.isArray(result)) {
+          const artificialResult = result.find(r => r.label === 'artificial');
+          if (artificialResult) {
+            aiProbability = artificialResult.score;
+            console.log(`[Hugging Face Scan] Tỉ lệ AI (artificial) phát hiện được: ${(aiProbability * 100).toFixed(2)}%`);
+            if (aiProbability >= 0.65) {
+              isAIDetected = true;
+              console.log('[Hugging Face Scan] Kết luận: Tác phẩm này sử dụng AI (Tỉ lệ >= 65%). Sẽ được gán nhãn cảnh báo.');
+            } else {
+              console.log('[Hugging Face Scan] Kết luận: Không phát hiện sử dụng AI hoặc dưới ngưỡng cảnh báo (65%).');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Hugging Face Detection Error]', err.message);
+      }
+    } else if (userDeclaredAI) {
+      console.log(`[Hugging Face Scan] Người dùng tự khai báo tác phẩm "${title}" được vẽ bằng AI. Bỏ qua bước quét tự động.`);
+    }
+
+    // Upload to Cloudinary (will fall back to local disk storage if credentials are not configured)
+    // Note: Must run AFTER Hugging Face scan because Cloudinary upload deletes local temp files.
+    const imageUrls = await uploadMultipleToCloudinary(req.files);
+
     const illustration = await Illustration.create({
       artistId: req.user.id,
       title,
@@ -51,6 +119,11 @@ export const createIllustration = async (req, res) => {
       tags: parsedTags,
       visibility: visibility || 'everyone',
       commentsEnabled: commentsEnabled !== 'false',
+      isAIGenerated: userDeclaredAI,
+      aiDetectionResult: {
+        isAIDetected,
+        aiProbability,
+      },
     });
 
     // Notify all followers

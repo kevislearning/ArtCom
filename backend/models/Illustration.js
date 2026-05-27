@@ -39,6 +39,20 @@ const illustrationSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isAIGenerated: {
+      type: Boolean,
+      default: false,
+    },
+    aiDetectionResult: {
+      isAIDetected: {
+        type: Boolean,
+        default: false,
+      },
+      aiProbability: {
+        type: Number,
+        default: 0,
+      },
+    },
     viewsCount: {
       type: Number,
       default: 0,

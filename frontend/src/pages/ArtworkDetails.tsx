@@ -299,19 +299,61 @@ export const ArtworkDetails = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
               <div>
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{artwork.title}</h1>
-                <span
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginTop: '4px',
-                  }}
-                >
-                  <Calendar size={12} />
-                  Đăng ngày {new Date(artwork.createdAt).toLocaleDateString('vi-VN')}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Calendar size={12} />
+                    Đăng ngày {new Date(artwork.createdAt).toLocaleDateString('vi-VN')}
+                  </span>
+
+                  {(artwork.isAIGenerated || artwork.aiDetectionResult?.isAIDetected) && (
+                    <div 
+                      style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)', 
+                        border: '1px solid rgba(245, 158, 11, 0.25)', 
+                        color: '#f59e0b', 
+                        padding: '2px 8px', 
+                        borderRadius: '12px', 
+                        fontSize: '11px', 
+                        fontWeight: 700
+                      }}
+                    >
+                      <span>Có thể sử dụng AI</span>
+                      <span 
+                        style={{ 
+                          cursor: 'help', 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          backgroundColor: 'rgba(245, 158, 11, 0.2)', 
+                          borderRadius: '50%', 
+                          width: '14px', 
+                          height: '14px', 
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          color: '#f59e0b'
+                        }}
+                        title={
+                          artwork.isAIGenerated 
+                            ? "Tác phẩm này được tác giả khai báo có sử dụng công cụ AI."
+                            : `Công cụ hệ thống chúng tôi ghi nhận khả năng tranh có sử dụng AI là ${(artwork.aiDetectionResult ? artwork.aiDetectionResult.aiProbability * 100 : 65).toFixed(0)}%`
+                        }
+                      >
+                        i
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {isOwner && (

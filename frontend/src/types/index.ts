@@ -68,6 +68,11 @@ export interface Illustration {
   likesCount: number;
   bookmarksCount: number;
   commentsCount: number;
+  isAIGenerated?: boolean;
+  aiDetectionResult?: {
+    isAIDetected: boolean;
+    aiProbability: number;
+  };
   liked?: boolean;
   bookmarked?: boolean;
   createdAt: string;

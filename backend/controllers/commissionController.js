@@ -3,6 +3,7 @@ import Illustration from '../models/Illustration.js';
 import User from '../models/User.js';
 import { walletService } from '../services/walletService.js';
 import { notificationService } from '../services/notificationService.js';
+import { uploadMultipleToCloudinary } from '../utils/cloudinary.js';
 
 export const createCommission = async (req, res) => {
   try {
@@ -207,7 +208,7 @@ export const completeCommission = async (req, res) => {
       return res.status(400).json({ message: 'Please upload the completed artwork files' });
     }
 
-    const imageUrls = req.files.map((file) => `/uploads/${file.filename}`);
+    const imageUrls = await uploadMultipleToCloudinary(req.files);
 
     // Create an illustration for the completed commission work
     const resultIllustration = await Illustration.create({

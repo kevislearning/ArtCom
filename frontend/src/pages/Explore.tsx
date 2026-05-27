@@ -28,6 +28,7 @@ export const Explore = () => {
   const [tagsInput, setTagsInput] = useState('');
   const [visibility, setVisibility] = useState<'everyone' | 'private' | 'logged_in'>('everyone');
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [isAIGenerated, setIsAIGenerated] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [formError, setFormError] = useState('');
@@ -98,6 +99,7 @@ export const Explore = () => {
     formData.append('description', description.trim());
     formData.append('visibility', visibility);
     formData.append('commentsEnabled', String(commentsEnabled));
+    formData.append('isAIGenerated', String(isAIGenerated));
 
     const tagsArr = tagsInput
       .split(',')
@@ -116,6 +118,7 @@ export const Explore = () => {
       setTitle('');
       setDescription('');
       setTagsInput('');
+      setIsAIGenerated(false);
       setSelectedFiles(null);
       setPreviews([]);
       refetch();
@@ -507,6 +510,35 @@ export const Explore = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* AI Declaration Toggle */}
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '6px', 
+                  backgroundColor: 'rgba(255, 165, 0, 0.05)', 
+                  border: '1px solid rgba(255, 165, 0, 0.15)',
+                  padding: '16px',
+                  borderRadius: 'var(--border-radius-sm)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="isAIGenerated"
+                    checked={isAIGenerated}
+                    onChange={(e) => setIsAIGenerated(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="isAIGenerated" style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-primary)' }}>
+                    IsAIGenerated (Tác phẩm vẽ bằng AI)
+                  </label>
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', paddingLeft: '28px', lineHeight: '1.4' }}>
+                  Nếu tắt, tác phẩm của bạn sẽ bị gán nhãn cảnh báo nếu công cụ chúng tôi đưa ra tỉ lệ sử dụng AI từ 65%.
+                </span>
               </div>
 
               {/* Visibility and Comments Switch */}
