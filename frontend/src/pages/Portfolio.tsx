@@ -55,20 +55,20 @@ export const Portfolio = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // Tab State
+  // Trạng thái Tab (Tab State)
   const [activeTab, setActiveTab] = useState<'works' | 'likes' | 'bookmarks'>('works');
   
-  // Commission Modal State
+  // Trạng thái Modal yêu cầu Commission
   const [showCommissionModal, setShowCommissionModal] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [commTitle, setCommTitle] = useState('');
   const [commDesc, setCommDesc] = useState('');
-  const [commPrice, setCommPrice] = useState(100000); // 100k VND base
+  const [commPrice, setCommPrice] = useState(100000); // Mức cơ bản 100k VND
   const [commDeadline, setCommDeadline] = useState('');
   const [commPrivate, setCommPrivate] = useState(false);
   const [commError, setCommError] = useState('');
 
-  // Edit Profile Modal State
+  // Trạng thái Modal chỉnh sửa hồ sơ (Edit Profile)
   const [showEditModal, setShowEditModal] = useState(false);
   const [nicknameVal, setNicknameVal] = useState('');
   const [bioVal, setBioVal] = useState('');
@@ -84,7 +84,7 @@ export const Portfolio = () => {
   const [occupationPublic, setOccupationPublic] = useState(true);
   const [customSocialLinks, setCustomSocialLinks] = useState<any[]>([]);
 
-  // Avatar & Banner edit states
+  // Các trạng thái chỉnh sửa Avatar & Banner
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
@@ -185,7 +185,7 @@ export const Portfolio = () => {
     }
   };
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: profileUser, isLoading: loadingProfile } = useGetPublicProfileQuery(id || '');
 
   const { data: artworks = [], isLoading: loadingArtworks } = useGetIllustrationsQuery({
@@ -251,7 +251,7 @@ export const Portfolio = () => {
       }).unwrap();
       
       setShowCommissionModal(false);
-      // Reset
+      // Thiết lập lại (Reset)
       setCommTitle('');
       setCommDesc('');
       setCommPrice(100000);
@@ -284,15 +284,15 @@ export const Portfolio = () => {
     if (activeTab === 'works') {
       return true;
     }
-    // For simplicity, likes/bookmarks tabs can be shown if denormalized or populated,
-    // let's just show artist's created works in this grid for academic simplicity,
-    // or let's display a message if tab is empty.
+    // Để đơn giản, các tab likes/bookmarks có thể hiển thị nếu được phi chuẩn hóa hoặc nạp dữ liệu,
+    // chúng ta chỉ hiển thị các tác phẩm đã tạo của nghệ sĩ trong lưới này để học thuật đơn giản,
+    // hoặc chúng ta hiển thị một thông báo nếu tab trống.
     return false;
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* 1. Cover Banner & Avatar Header */}
+      {/* 1. Ảnh bìa Cover Banner & Header Avatar */}
       <div
         className="glass-panel animate-fade-in"
         style={{
@@ -302,7 +302,7 @@ export const Portfolio = () => {
           position: 'relative',
         }}
       >
-        {/* Banner Cover */}
+        {/* Ảnh bìa Banner */}
         <div
           style={{
             height: '240px',
@@ -315,7 +315,7 @@ export const Portfolio = () => {
           }}
         />
 
-        {/* Profile Details Overlay Section */}
+        {/* Phần thông tin chi tiết hồ sơ lớp phủ (Profile Details Overlay) */}
         <div
           style={{
             padding: '32px',
@@ -331,7 +331,7 @@ export const Portfolio = () => {
           className="portfolio-details-header"
         >
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '24px', flexWrap: 'wrap' }}>
-            {/* Avatar Frame */}
+            {/* Khung Avatar */}
             <img
               src={getImageUrl(profileUser.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + profileUser.username}
               alt={profileUser.nickname}
@@ -373,7 +373,7 @@ export const Portfolio = () => {
             </div>
           </div>
 
-          {/* Action triggers */}
+          {/* Các nút kích hoạt hành động */}
           <div style={{ display: 'flex', gap: '12px', paddingBottom: '8px' }}>
             {isMe && (
               <button
@@ -421,7 +421,7 @@ export const Portfolio = () => {
           </div>
         </div>
 
-        {/* User Bio and Stats details */}
+        {/* Chi tiết Bio người dùng và các chỉ số thống kê */}
         <div
           style={{
             padding: '0 32px 32px',
@@ -525,7 +525,7 @@ export const Portfolio = () => {
                 )}
               </div>
 
-              {/* Custom Social Links */}
+              {/* Các liên kết mạng xã hội tùy chỉnh */}
               {profileUser.customSocialLinks && profileUser.customSocialLinks.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>Mạng xã hội liên kết:</span>
@@ -580,7 +580,7 @@ export const Portfolio = () => {
         </div>
       </div>
 
-      {/* 2. Portfolio Tabs */}
+      {/* 2. Các Tab của Portfolio */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div
           className="glass-panel"
@@ -610,7 +610,7 @@ export const Portfolio = () => {
           </button>
         </div>
 
-        {/* Tab display Grid */}
+        {/* Lưới hiển thị các Tab */}
         {loadingArtworks ? (
           <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
         ) : activeTab === 'works' && displayedWorks.length === 0 ? (
@@ -626,7 +626,7 @@ export const Portfolio = () => {
         )}
       </div>
 
-      {/* Commission Request Popup Modal */}
+      {/* Popup Modal tạo yêu cầu Commission */}
       {showCommissionModal && (
         <div
           style={{
@@ -658,7 +658,7 @@ export const Portfolio = () => {
               boxShadow: 'var(--card-shadow)',
             }}
           >
-            {/* Modal Header */}
+            {/* Header của Modal */}
             <div
               style={{
                 display: 'flex',
@@ -683,7 +683,7 @@ export const Portfolio = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body của Modal */}
             <form onSubmit={handleCommissionSubmit} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {commError && (
                 <div
@@ -702,7 +702,7 @@ export const Portfolio = () => {
                 </div>
               )}
 
-              {/* Title */}
+              {/* Tiêu đề */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>{t.requestTitle} *</label>
                 <input
@@ -715,7 +715,7 @@ export const Portfolio = () => {
                 />
               </div>
 
-              {/* Description (Brief) */}
+              {/* Mô tả (Ngắn gọn) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>{t.requestDesc} *</label>
                 <textarea
@@ -729,7 +729,7 @@ export const Portfolio = () => {
                 />
               </div>
 
-              {/* Price */}
+              {/* Giá cả */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>{t.requestPrice} *</label>
                 <input
@@ -743,7 +743,7 @@ export const Portfolio = () => {
                 />
               </div>
 
-              {/* Deadline */}
+              {/* Hạn chót (Deadline) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>{t.requestDeadline} *</label>
                 <input
@@ -755,7 +755,7 @@ export const Portfolio = () => {
                 />
               </div>
 
-              {/* Private Checkbox */}
+              {/* Hộp kiểm đặt ở chế độ riêng tư (Private) */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
                   type="checkbox"
@@ -769,7 +769,7 @@ export const Portfolio = () => {
                 </label>
               </div>
 
-              {/* Action buttons */}
+              {/* Các nút hành động */}
               <div
                 style={{
                   display: 'flex',
@@ -798,7 +798,7 @@ export const Portfolio = () => {
         </div>
       )}
 
-      {/* Pixiv-inspired Request Terms View Popup Modal */}
+      {/* Popup Modal xem điều khoản yêu cầu lấy cảm hứng từ Pixiv */}
       {showTermsPopup && profileUser?.requestTerms?.hasTerms && (
         <div
           style={{
@@ -832,7 +832,7 @@ export const Portfolio = () => {
               flexDirection: 'column'
             }}
           >
-            {/* 1. Cover Header Section */}
+            {/* 1. Phân khúc Header ảnh bìa */}
             <div
               style={{
                 height: '180px',
@@ -845,7 +845,7 @@ export const Portfolio = () => {
                 position: 'relative'
               }}
             >
-              {/* Close button */}
+              {/* Nút đóng */}
               <button
                 onClick={() => setShowTermsPopup(false)}
                 style={{
@@ -866,7 +866,7 @@ export const Portfolio = () => {
                 <X size={18} />
               </button>
 
-              {/* Avatar Overlay */}
+              {/* Lớp phủ Avatar */}
               <div
                 style={{
                   position: 'absolute',
@@ -892,7 +892,7 @@ export const Portfolio = () => {
               </div>
             </div>
 
-            {/* 2. Details Content Section */}
+            {/* 2. Phân khúc nội dung chi tiết */}
             <div
               style={{
                 padding: '48px 32px 32px',
@@ -937,7 +937,7 @@ export const Portfolio = () => {
                 {profileUser.requestTerms.details}
               </div>
 
-              {/* Target price display banner */}
+              {/* Banner hiển thị mức giá mục tiêu (Target price) */}
               <div
                 style={{
                   backgroundColor: 'rgba(20, 184, 166, 0.05)',
@@ -959,7 +959,7 @@ export const Portfolio = () => {
               </div>
             </div>
 
-            {/* 3. Action Footer Section */}
+            {/* 3. Phân khúc chân trang hành động (Action Footer) */}
             <div
               style={{
                 padding: '20px 32px',
@@ -993,7 +993,7 @@ export const Portfolio = () => {
         </div>
       )}
 
-      {/* 4. Edit Profile Popup Modal */}
+      {/* 4. Popup Modal chỉnh sửa hồ sơ (Edit Profile) */}
       {showEditModal && (
         <div
           style={{
@@ -1027,7 +1027,7 @@ export const Portfolio = () => {
               flexDirection: 'column',
             }}
           >
-            {/* Modal Header */}
+            {/* Header của Modal */}
             <div
               style={{
                 display: 'flex',
@@ -1059,7 +1059,7 @@ export const Portfolio = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body của Modal */}
             <form onSubmit={handleSaveEditProfile} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {editError && (
                 <div style={{ color: 'var(--danger)', fontSize: '13px', fontWeight: 600, backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '12px 16px', borderRadius: '6px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
@@ -1072,7 +1072,7 @@ export const Portfolio = () => {
                 </div>
               )}
 
-              {/* 1. Banner Cover & Avatar */}
+              {/* 1. Ảnh bìa Cover & Avatar */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Ảnh bìa trang cá nhân</label>
                 <div
@@ -1168,7 +1168,7 @@ export const Portfolio = () => {
                 </div>
               </div>
 
-              {/* 2. Nickname & Bio */}
+              {/* 2. Biệt danh & Bio */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 700 }}>Biệt danh *</label>
@@ -1195,7 +1195,7 @@ export const Portfolio = () => {
                 </div>
               </div>
 
-              {/* 3. Website & Privacy */}
+              {/* 3. Website & Sự riêng tư (Privacy) */}
               <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Website cá nhân</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'center' }}>
@@ -1219,7 +1219,7 @@ export const Portfolio = () => {
                 </div>
               </div>
 
-              {/* 4. Custom Social Links */}
+              {/* 4. Các liên kết mạng xã hội tùy chỉnh */}
               <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Liên kết mạng xã hội khác</h4>
@@ -1298,7 +1298,7 @@ export const Portfolio = () => {
                 </div>
               </div>
 
-              {/* 5. Additional Personal Information */}
+              {/* 5. Thông tin cá nhân bổ sung */}
               <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Thông tin cá nhân bổ sung</h4>
 
@@ -1397,13 +1397,13 @@ export const Portfolio = () => {
                       className="glass-input"
                       value={occupationVal}
                       onChange={(e) => setOccupationVal(e.target.value)}
-                      placeholder="Họa sĩ tự do, Thiết kế đồ họa..."
+                      placeholder="Người dùng tự do, Thiết kế đồ họa..."
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Action buttons */}
+              {/* Các nút hành động */}
               <div
                 style={{
                   display: 'flex',

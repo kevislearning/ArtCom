@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Upload, X, Trophy, Calendar, Sparkles, Users } from 'lucide-react';
+import { Plus, Upload, X, Calendar, Sparkles, Users, Clock, Flame, Heart, Bookmark, UserPlus, UserCheck, Search } from 'lucide-react';
 import type { RootState } from '../store';
 import { translations } from '../utils/translation';
-import { useGetIllustrationsQuery, useCreateIllustrationMutation } from '../store/illustrationApi';
-import { useGetRecommendedArtistsQuery } from '../store/authApi';
+import { useGetIllustrationsQuery, useCreateIllustrationMutation, useSearchTagsQuery } from '../store/illustrationApi';
+import { useGetRecommendedArtistsQuery, useSearchUsersQuery } from '../store/authApi';
+import { useToggleFollowMutation } from '../store/followApi';
 import { ArtworkCard } from '../components/ArtworkCard';
 import { getImageUrl } from '../utils/url';
 
@@ -16,13 +17,14 @@ export const Explore = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = language === 'en' ? translations.en : translations.vn;
 
-  // State
+  // Trạng thái (State)
   const [sort, setSort] = useState('newest');
   const [tag, setTag] = useState('');
   const [search, setSearch] = useState('');
+  const [type, setType] = useState<'artwork' | 'user'>('artwork');
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Form State
+  // Trạng thái biểu mẫu (Form State)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
@@ -33,13 +35,14 @@ export const Explore = () => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [formError, setFormError] = useState('');
 
-  // Sync state with URL queries
+  // Đồng bộ hóa state với URL queries
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const sSort = params.get('sort');
     const sTag = params.get('tag');
     const sSearch = params.get('search');
     const sUpload = params.get('upload');
+    const sType = params.get('type');
 
     if (sSort) setSort(sSort);
     else setSort('newest');
@@ -50,18 +53,34 @@ export const Explore = () => {
     if (sSearch) setSearch(sSearch);
     else setSearch('');
 
+    if (sType === 'user' || sType === 'artwork') {
+      setType(sType as 'artwork' | 'user');
+    } else {
+      setType('artwork');
+    }
+
     if (sUpload === 'true') {
       setShowUploadModal(true);
-      // Clean up upload query param
+      // Dọn dẹp upload query param
       navigate('/explore', { replace: true });
     }
   }, [location.search]);
 
-  // Query
-  const { data: artworks = [], isLoading, refetch } = useGetIllustrationsQuery({
+  // Các câu truy vấn (Queries) & Đột biến (Mutations)
+  const { data: artworks = [], isLoading: isArtworksLoading, refetch } = useGetIllustrationsQuery({
     sort,
     tag: tag || undefined,
     search: search || undefined,
+  }, {
+    skip: type !== 'artwork'
+  });
+
+  const { data: tagResults = [] } = useSearchTagsQuery(search, {
+    skip: type !== 'artwork' || !search
+  });
+
+  const { data: userResults = [], isLoading: isUsersLoading } = useSearchUsersQuery(search, {
+    skip: type !== 'user'
   });
 
   const { data: recommendedArtists = [] } = useGetRecommendedArtistsQuery(undefined, {
@@ -69,6 +88,7 @@ export const Explore = () => {
   });
 
   const [createIllustration, { isLoading: isUploading }] = useCreateIllustrationMutation();
+  const [toggleFollow] = useToggleFollowMutation();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -114,7 +134,7 @@ export const Explore = () => {
     try {
       await createIllustration(formData).unwrap();
       setShowUploadModal(false);
-      // Reset form
+      // Khởi động lại biểu mẫu (Reset form)
       setTitle('');
       setDescription('');
       setTagsInput('');
@@ -129,16 +149,28 @@ export const Explore = () => {
   };
 
   const clearFilters = () => {
-    navigate('/explore');
+    navigate('/explore?type=' + type);
+  };
+
+  const handleFollowToggle = async (artistId: string) => {
+    try {
+      await toggleFollow(artistId).unwrap();
+    } catch (err) {
+      console.error('Follow failed', err);
+    }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* Explore Header with Filters & Upload */}
+      {/* Header trang Explore với các bộ lọc & Nút tải lên */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            {tag ? `Tag: #${tag}` : search ? `Kết quả cho: "${search}"` : t.explore}
+            {type === 'user' ? (
+              search ? `Kết quả tìm kiếm người dùng cho: "${search}"` : 'Tìm kiếm Người dùng'
+            ) : (
+              tag ? `Tag: #${tag}` : search ? `Kết quả cho: "${search}"` : t.explore
+            )}
           </h1>
           {(tag || search) && (
             <button
@@ -160,79 +192,59 @@ export const Explore = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {/* Sorting Buttons */}
-          <div
-            className="glass-panel"
-            style={{
-              display: 'flex',
-              padding: '4px',
-              borderRadius: '24px',
-              border: '1px solid var(--glass-border)',
-            }}
-          >
-            <button
-              onClick={() => navigate(`/explore?sort=newest${tag ? `&tag=${tag}` : ''}${search ? `&search=${search}` : ''}`)}
+          {/* Các nút sắp xếp các tác phẩm */}
+          {type === 'artwork' && (
+            <div
+              className="glass-panel"
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: sort === 'newest' ? 'var(--primary)' : 'transparent',
-                color: sort === 'newest' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'all var(--transition-fast)',
+                padding: '4px',
+                borderRadius: '24px',
+                border: '1px solid var(--glass-border)',
+                gap: '2px',
+                flexWrap: 'wrap',
               }}
             >
-              <Calendar size={14} />
-              Mới nhất
-            </button>
-            <button
-              onClick={() => navigate(`/explore?sort=popular${tag ? `&tag=${tag}` : ''}${search ? `&search=${search}` : ''}`)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: sort === 'popular' ? 'var(--primary)' : 'transparent',
-                color: sort === 'popular' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              <Trophy size={14} />
-              Phổ biến nhất
-            </button>
-            <button
-              onClick={() => navigate(`/explore?sort=recommended${tag ? `&tag=${tag}` : ''}${search ? `&search=${search}` : ''}`)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: sort === 'recommended' ? 'var(--primary)' : 'transparent',
-                color: sort === 'recommended' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              <Sparkles size={14} />
-              Đề xuất
-            </button>
-          </div>
+              {[
+                { value: 'newest', label: 'Mới nhất', icon: <Clock size={14} /> },
+                { value: 'oldest', label: 'Cũ nhất', icon: <Calendar size={14} /> },
+                { value: 'popularity', label: 'Phổ biến', icon: <Flame size={14} /> },
+                { value: 'likes', label: 'Lượt thích', icon: <Heart size={14} /> },
+                { value: 'bookmarks', label: 'Bookmark', icon: <Bookmark size={14} /> },
+                { value: 'recommended', label: 'Đề xuất', icon: <Sparkles size={14} /> },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => navigate(`/explore?sort=${item.value}${tag ? `&tag=${tag}` : ''}${search ? `&search=${search}` : ''}${type ? `&type=${type}` : ''}`)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '20px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    backgroundColor: sort === item.value ? 'var(--primary)' : 'transparent',
+                    color: sort === item.value ? '#ffffff' : 'var(--text-secondary)',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  onMouseOver={(e) => {
+                    if (sort !== item.value) e.currentTarget.style.color = 'var(--text-primary)';
+                  }}
+                  onMouseOut={(e) => {
+                    if (sort !== item.value) e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Create Post Upload Trigger */}
+          {/* Bộ kích hoạt tải lên bài đăng mới (Create Post) */}
           {user && (
             <button
               onClick={() => setShowUploadModal(true)}
@@ -246,8 +258,66 @@ export const Explore = () => {
         </div>
       </div>
 
-      {/* Recommended Artists Panel inside Recommended Filter */}
-      {sort === 'recommended' && recommendedArtists.length > 0 && (
+      {/* Bong bóng gợi ý kết quả tìm kiếm theo tag bên trong tìm kiếm tác phẩm */}
+      {type === 'artwork' && search && tagResults.length > 0 && (
+        <div 
+          className="glass-panel animate-fade-in"
+          style={{
+            padding: '16px 24px',
+            borderRadius: 'var(--border-radius-md)',
+            border: '1px solid var(--glass-border)',
+            backgroundColor: 'rgba(255, 255, 255, 0.01)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Search size={14} />
+            Thẻ tag liên quan
+          </span>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {tagResults.map((tagObj) => (
+              <button
+                key={tagObj._id}
+                onClick={() => navigate(`/explore?tag=${encodeURIComponent(tagObj._id)}&type=artwork`)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--primary)',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary)';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                #{tagObj._id}
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  ({tagObj.count})
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bảng Artist được đề xuất bên trong Bộ lọc đề xuất */}
+      {type === 'artwork' && sort === 'recommended' && recommendedArtists.length > 0 && (
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -262,7 +332,7 @@ export const Explore = () => {
         >
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Users size={20} style={{ color: 'var(--primary)' }} />
-            Họa sĩ đề xuất cho bạn
+            Người dùng đề xuất cho bạn
           </h2>
           <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingBottom: '8px' }} className="hide-scrollbar">
             {recommendedArtists.map((artist) => (
@@ -311,31 +381,172 @@ export const Explore = () => {
         </div>
       )}
 
-      {/* Grid of Results */}
-      {isLoading ? (
-        <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
-      ) : artworks.length === 0 ? (
-        <div
-          style={{
-            padding: '64px',
-            textAlign: 'center',
-            color: 'var(--text-muted)',
-            borderRadius: 'var(--border-radius-md)',
-            border: '2px dashed var(--glass-border)',
-            fontSize: '15px',
-          }}
-        >
-          {t.noWorks}
-        </div>
+      {/* Lưới hiển thị kết quả */}
+      {type === 'user' ? (
+        isUsersLoading ? (
+          <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
+        ) : !search ? (
+          <div
+            style={{
+              padding: '64px',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              borderRadius: 'var(--border-radius-md)',
+              border: '2px dashed var(--glass-border)',
+              fontSize: '15px',
+            }}
+          >
+            Nhập từ khóa tìm kiếm để tìm người dùng.
+          </div>
+        ) : userResults.length === 0 ? (
+          <div
+            style={{
+              padding: '64px',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              borderRadius: 'var(--border-radius-md)',
+              border: '2px dashed var(--glass-border)',
+              fontSize: '15px',
+            }}
+          >
+            Không tìm thấy người dùng phù hợp.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {userResults.map((artist) => (
+              <div 
+                key={artist._id}
+                className="glass-panel animate-fade-in"
+                style={{
+                  display: 'flex',
+                  padding: '24px',
+                  borderRadius: 'var(--border-radius-lg)',
+                  border: '1px solid var(--glass-border)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  gap: '24px',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* Phía bên trái: Thông tin và Nút theo dõi */}
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flex: '1', minWidth: '280px' }}>
+                  <img
+                    src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
+                    alt={artist.nickname}
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid var(--glass-border)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => navigate(`/portfolio/${artist._id}`)}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <h3 
+                      style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, cursor: 'pointer' }}
+                      onClick={() => navigate(`/portfolio/${artist._id}`)}
+                    >
+                      {artist.nickname}
+                    </h3>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>@{artist.username}</span>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {artist.bio || (language === 'vn' ? 'Chưa có tiểu sử.' : 'No biography yet.')}
+                    </p>
+                    
+                    {/* Nút theo dõi (Follow Button) */}
+                    {user && user._id !== artist._id && (
+                      <button
+                        onClick={() => handleFollowToggle(artist._id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          marginTop: '8px',
+                          width: 'fit-content',
+                          backgroundColor: artist.followed ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
+                          color: artist.followed ? 'var(--text-primary)' : '#ffffff',
+                          border: artist.followed ? '1px solid var(--glass-border)' : 'none',
+                          transition: 'all var(--transition-fast)',
+                        }}
+                      >
+                        {artist.followed ? <UserCheck size={14} /> : <UserPlus size={14} />}
+                        {artist.followed ? (language === 'vn' ? 'Đang Theo Dõi' : 'Following') : (language === 'vn' ? 'Theo Dõi' : 'Follow')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Phía bên phải: 3 ảnh thu nhỏ tác phẩm mới nhất */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {artist.artworks && artist.artworks.length > 0 ? (
+                    artist.artworks.map((art: any) => (
+                      <div
+                        key={art._id}
+                        onClick={() => navigate(`/artwork/${art._id}`)}
+                        style={{
+                          width: '90px',
+                          height: '90px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px solid var(--glass-border)',
+                          cursor: 'pointer',
+                          transition: 'transform var(--transition-fast)',
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                        onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                      >
+                        <img
+                          src={getImageUrl(art.imageUrls?.[0]) || '/placeholder.png'}
+                          alt={art.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      {language === 'vn' ? 'Chưa đăng tác phẩm nào' : 'No artworks uploaded yet'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : (
-        <div className="masonry-grid">
-          {artworks.map((artwork) => (
-            <ArtworkCard key={artwork._id} artwork={artwork} />
-          ))}
-        </div>
+        isArtworksLoading ? (
+          <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
+        ) : artworks.length === 0 ? (
+          <div
+            style={{
+              padding: '64px',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              borderRadius: 'var(--border-radius-md)',
+              border: '2px dashed var(--glass-border)',
+              fontSize: '15px',
+            }}
+          >
+            {t.noWorks}
+          </div>
+        ) : (
+          <div className="masonry-grid">
+            {artworks.map((artwork) => (
+              <ArtworkCard key={artwork._id} artwork={artwork} />
+            ))}
+          </div>
+        )
       )}
 
-      {/* Upload Illustration Modal Popup */}
+      {/* Popup Modal tải lên tác phẩm minh họa (Upload Illustration) */}
       {showUploadModal && (
         <div
           style={{
@@ -367,7 +578,7 @@ export const Explore = () => {
               boxShadow: 'var(--card-shadow)',
             }}
           >
-            {/* Modal Header */}
+            {/* Header của Modal */}
             <div
               style={{
                 display: 'flex',
@@ -392,7 +603,7 @@ export const Explore = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body của Modal */}
             <form onSubmit={handleUploadSubmit} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {formError && (
                 <div
@@ -411,7 +622,7 @@ export const Explore = () => {
                 </div>
               )}
 
-              {/* Title */}
+              {/* Tiêu đề */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Tiêu đề tác phẩm *</label>
                 <input
@@ -424,7 +635,7 @@ export const Explore = () => {
                 />
               </div>
 
-              {/* Description */}
+              {/* Mô tả */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Mô tả chi tiết</label>
                 <textarea
@@ -437,7 +648,7 @@ export const Explore = () => {
                 />
               </div>
 
-              {/* Tag fields */}
+              {/* Các trường nhập tag */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Các thẻ tag (Cách nhau bằng dấu phẩy)</label>
                 <input
@@ -449,7 +660,7 @@ export const Explore = () => {
                 />
               </div>
 
-              {/* File Upload Selector & Preview */}
+              {/* Bộ chọn file tải lên & Xem trước */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Tải ảnh tác phẩm lên *</label>
                 
@@ -490,7 +701,7 @@ export const Explore = () => {
                   </p>
                 </div>
 
-                {/* File previews list */}
+                {/* Danh sách xem trước file */}
                 {previews.length > 0 && (
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                     {previews.map((url, idx) => (
@@ -512,7 +723,7 @@ export const Explore = () => {
                 )}
               </div>
 
-              {/* AI Declaration Toggle */}
+              {/* Nút gạt khai báo sử dụng AI */}
               <div 
                 style={{ 
                   display: 'flex', 
@@ -541,7 +752,7 @@ export const Explore = () => {
                 </span>
               </div>
 
-              {/* Visibility and Comments Switch */}
+              {/* Cần gạt cài đặt hiển thị (Visibility) và bình luận */}
               <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
                   <label style={{ fontSize: '13px', fontWeight: 700 }}>Trạng thái hiển thị</label>
@@ -571,7 +782,7 @@ export const Explore = () => {
                 </div>
               </div>
 
-              {/* Actions Footer */}
+              {/* Chân trang các hành động (Actions Footer) */}
               <div
                 style={{
                   display: 'flex',

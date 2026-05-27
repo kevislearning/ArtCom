@@ -20,7 +20,7 @@ const likeSchema = new mongoose.Schema(
   }
 );
 
-// Unique index to prevent multiple likes by the same user on the same illustration
+// Index duy nhất để ngăn chặn một người dùng like nhiều lần trên cùng một illustration
 likeSchema.index({ userId: 1, illustrationId: 1 }, { unique: true });
 
 const Like = mongoose.model('Like', likeSchema);

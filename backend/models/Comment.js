@@ -31,7 +31,7 @@ const commentSchema = new mongoose.Schema(
   }
 );
 
-// Add index for fast sorting comment threads chronologically
+// Thêm index để sắp xếp nhanh các luồng bình luận theo thời gian
 commentSchema.index({ illustrationId: 1, createdAt: 1 });
 
 const Comment = mongoose.model('Comment', commentSchema);

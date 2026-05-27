@@ -27,15 +27,15 @@ export const createComment = async (req, res) => {
       content,
     });
 
-    // Populate user info for front-end rendering
+    // Populate thông tin người dùng để render ở front-end
     const populatedComment = await Comment.findById(comment._id)
       .populate('userId', 'username nickname avatarUrl isArtist');
 
-    // Increment comment count on illustration
+    // Tăng số lượng bình luận (comment count) của illustration
     illustration.commentsCount += 1;
     await illustration.save();
 
-    // Fire notifications
+    // Kích hoạt các notification
     if (parentCommentId) {
       const parentComment = await Comment.findById(parentCommentId);
       if (parentComment && parentComment.userId.toString() !== userId) {
@@ -91,7 +91,7 @@ export const deleteComment = async (req, res) => {
 
     const illustration = await Illustration.findById(comment.illustrationId);
 
-    // Only comment owner or artwork owner can delete
+    // Chỉ chủ sở hữu comment hoặc chủ sở hữu artwork mới có quyền xóa
     const isCommentOwner = comment.userId.toString() === req.user.id;
     const isIllustrationOwner = illustration && illustration.artistId.toString() === req.user.id;
 
@@ -101,7 +101,7 @@ export const deleteComment = async (req, res) => {
 
     await Comment.deleteOne({ _id: comment._id });
 
-    // Decrement comment count on illustration
+    // Giảm số lượng bình luận (comment count) của illustration
     if (illustration) {
       illustration.commentsCount = Math.max(0, illustration.commentsCount - 1);
       await illustration.save();

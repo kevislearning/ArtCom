@@ -1,7 +1,12 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
+import Illustration from '../models/Illustration.js';
+import Follow from '../models/Follow.js';
 import { uploadFileToCloudinary } from '../utils/cloudinary.js';
+
+
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -13,7 +18,7 @@ const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
 
   const cookieOptions = {
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 ngày
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -240,7 +245,7 @@ export const updateProfile = async (req, res) => {
     const parsedCustomSocialLinks = parseField(customSocialLinks);
     if (parsedCustomSocialLinks !== undefined) user.customSocialLinks = parsedCustomSocialLinks;
 
-    // Handle uploaded file URLs (avatar or banner) if Multer saves them
+    // Xử lý URL của file tải lên (avatar hoặc banner) nếu được Multer lưu lại
     if (req.files) {
       if (req.files.avatar && req.files.avatar[0]) {
         user.avatarUrl = await uploadFileToCloudinary(req.files.avatar[0]);
@@ -261,7 +266,7 @@ export const updateProfile = async (req, res) => {
 
 export const getRecommendedArtists = async (req, res) => {
   try {
-    // Fetch top 6 artists sorted by totalLikes and totalViews
+    // Lấy danh sách top 6 artist được sắp xếp theo totalLikes và totalViews
     const artists = await User.find({ isArtist: true })
       .select('-passwordHash')
       .sort({ totalLikes: -1, totalViews: -1 })
@@ -322,7 +327,7 @@ export const updateRequestTerms = async (req, res) => {
       user.requestTerms.backgroundUrl = await uploadFileToCloudinary(req.file);
     }
 
-    user.isArtist = true; // Sync for compatibility
+    user.isArtist = true; // Đồng bộ hóa để tương thích
 
     await user.save();
 
@@ -349,7 +354,7 @@ export const deleteRequestTerms = async (req, res) => {
       hasTerms: false
     };
 
-    user.isArtist = false; // Sync for compatibility
+    user.isArtist = false; // Đồng bộ hóa để tương thích
 
     await user.save();
 
@@ -360,3 +365,116 @@ export const deleteRequestTerms = async (req, res) => {
     res.status(500).json({ message: 'Server error deleting request terms' });
   }
 };
+
+export const googleLogin = async (req, res) => {
+  const { credential } = req.body;
+
+  try {
+    if (!credential) {
+      return res.status(400).json({ message: 'Token Google không hợp lệ' });
+    }
+
+    const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+
+    // Xác thực token sử dụng google-auth-library
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(400).json({ message: 'Không thể xác thực tài khoản Google' });
+    }
+
+    const { email, name, picture } = payload;
+
+    // Kiểm tra xem người dùng đã tồn tại chưa
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Người dùng chưa tồn tại, tạo người dùng mới
+      // 1. Tạo username duy nhất từ phần tiền tố của email
+      const emailPrefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      let baseUsername = emailPrefix || 'user';
+      let username = baseUsername;
+      
+      // Tiếp tục kiểm tra cho đến khi tìm thấy username duy nhất
+      let usernameExists = await User.findOne({ username });
+      let counter = 1;
+      while (usernameExists) {
+        username = `${baseUsername}${counter}`;
+        usernameExists = await User.findOne({ username });
+        counter++;
+      }
+
+      // 2. Tạo một password hash ngẫu nhiên bảo mật
+      const randomPassword = Math.random().toString(36).slice(-10) + Date.now().toString();
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(randomPassword, salt);
+
+      // 3. Tạo người dùng
+      user = await User.create({
+        username,
+        email: email.toLowerCase(),
+        passwordHash,
+        nickname: name || username,
+        avatarUrl: picture || '',
+        isArtist: false,
+      });
+    }
+
+    // Đăng nhập người dùng và gửi response chứa token
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('[Google Login Error]', error);
+    res.status(500).json({ message: 'Lỗi máy chủ trong quá trình đăng nhập bằng Google' });
+  }
+};
+
+export const searchUsers = async (req, res) => {
+  try {
+    const { search } = req.query;
+    if (!search) {
+      return res.status(200).json([]);
+    }
+
+    const query = {
+      $or: [
+        { username: { $regex: search, $options: 'i' } },
+        { nickname: { $regex: search, $options: 'i' } },
+      ],
+    };
+
+    const users = await User.find(query).select('-passwordHash').limit(20);
+
+    // Lấy tối đa 3 artwork mới nhất cho mỗi người dùng khớp
+    const usersWithArtworks = await Promise.all(
+      users.map(async (u) => {
+        const artworks = await Illustration.find({ artistId: u._id, visibility: 'everyone' })
+          .sort({ createdAt: -1 })
+          .limit(3)
+          .select('imageUrls title');
+        
+        let followed = false;
+        if (req.user) {
+          followed = !!(await Follow.findOne({ followerId: req.user.id, followingId: u._id }));
+        }
+
+        return {
+          ...u.toObject(),
+          artworks,
+          followed,
+        };
+      })
+    );
+
+    res.status(200).json(usersWithArtworks);
+  } catch (error) {
+    console.error('[Search Users Error]', error);
+    res.status(500).json({ message: 'Server error searching users' });
+  }
+};
+
+

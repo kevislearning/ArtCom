@@ -33,6 +33,7 @@ export const TopBar = () => {
   const t = translations[language];
 
   const [searchVal, setSearchVal] = useState('');
+  const [searchType, setSearchType] = useState<'artwork' | 'user'>('artwork');
   const [showNotif, setShowNotif] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,15 +53,15 @@ export const TopBar = () => {
     }
   };
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
     skip: !user,
-    pollingInterval: 15000, // Fallback poll in case WS drops
+    pollingInterval: 15000, // Fallback poll định kỳ phòng trường hợp WS bị ngắt kết nối
   });
 
   const { data: balanceData } = useGetWalletBalanceQuery(undefined, {
     skip: !user,
-    pollingInterval: 10000, // Sync balance periodically
+    pollingInterval: 10000, // Đồng bộ hóa số dư định kỳ
   });
   
   const [markAllRead] = useMarkAllNotificationsReadMutation();
@@ -69,14 +70,21 @@ export const TopBar = () => {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   useEffect(() => {
-    // Sync URL search query if exists
+    // Đồng bộ hóa URL search query nếu tồn tại
     const params = new URLSearchParams(location.search);
     const q = params.get('search');
     if (q) setSearchVal(q);
+    
+    const typeParam = params.get('type');
+    if (typeParam === 'user' || typeParam === 'artwork') {
+      setSearchType(typeParam as 'artwork' | 'user');
+    } else {
+      setSearchType('artwork');
+    }
   }, [location]);
 
   useEffect(() => {
-    // Close dropdown on click outside
+    // Đóng dropdown khi nhấp ra ngoài
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowNotif(false);
@@ -89,9 +97,9 @@ export const TopBar = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchVal.trim()) {
-      navigate(`/explore?search=${encodeURIComponent(searchVal.trim())}`);
+      navigate(`/explore?search=${encodeURIComponent(searchVal.trim())}&type=${searchType}`);
     } else {
-      navigate('/explore');
+      navigate(`/explore?type=${searchType}`);
     }
   };
 
@@ -99,7 +107,7 @@ export const TopBar = () => {
     try {
       await markRead(notif._id).unwrap();
       
-      // Navigate depending on type
+      // Điều hướng tùy thuộc vào loại
       if (notif.targetModel === 'Illustration' && notif.targetId) {
         navigate(`/artwork/${notif.targetId}`);
       } else if (notif.targetModel === 'Commission') {
@@ -137,7 +145,7 @@ export const TopBar = () => {
         backdropFilter: 'blur(16px)',
       }}
     >
-      {/* Left Column: Website Logo & Name */}
+      {/* Cột trái: Logo & Tên website */}
       <div
         onClick={() => navigate('/')}
         style={{
@@ -150,7 +158,29 @@ export const TopBar = () => {
           minWidth: '150px'
         }}
       >
-        <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
+        <img
+          src="/favicon.png"
+          alt="ArtCom"
+          style={{
+            width: '32px',
+            height: '32px',
+            objectFit: 'contain',
+            borderRadius: '4px',
+            filter: 'drop-shadow(0 0 8px var(--primary-glow))'
+          }}
+          onError={(e) => {
+            // Fallback sang Lucide Image icon nếu load favicon.png thất bại
+            e.currentTarget.style.display = 'none';
+            const fallback = document.getElementById('logo-fallback-icon');
+            if (fallback) fallback.style.display = 'flex';
+          }}
+        />
+        <div
+          id="logo-fallback-icon"
+          style={{ display: 'none', alignItems: 'center' }}
+        >
+          <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
+        </div>
         <span
           style={{
             fontWeight: 800,
@@ -165,7 +195,7 @@ export const TopBar = () => {
         </span>
       </div>
 
-      {/* Center Column: Centered Search Bar */}
+      {/* Cột giữa: Thanh tìm kiếm căn giữa (Search Bar) */}
       <div
         style={{
           flex: 1,
@@ -177,42 +207,77 @@ export const TopBar = () => {
         <form
           onSubmit={handleSearchSubmit}
           style={{
-            position: 'relative',
-            maxWidth: '420px',
-            width: '100%',
             display: 'flex',
             alignItems: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '24px',
+            height: '40px',
+            width: '100%',
+            maxWidth: '420px',
+            padding: '0 8px',
+            gap: '4px',
+            backdropFilter: 'blur(8px)',
           }}
         >
-          <input
-            type="text"
-            className="glass-input"
-            value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
-            placeholder={t.searchPlaceholder}
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value as 'artwork' | 'user')}
             style={{
-              width: '100%',
-              paddingLeft: '44px',
-              paddingRight: '16px',
-              borderRadius: '24px',
-              height: '40px',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              border: 'none',
+              outline: 'none',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              padding: '0 8px',
+              borderRight: '1px solid var(--glass-border)',
+              height: '24px',
             }}
-          />
-          <Search
-            size={18}
-            style={{
-              position: 'absolute',
-              left: '16px',
-              color: 'var(--text-muted)',
-              pointerEvents: 'none',
-            }}
-          />
+          >
+            <option value="artwork" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              {language === 'vn' ? 'Tranh' : 'Arts'}
+            </option>
+            <option value="user" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              {language === 'vn' ? 'Người dùng' : 'Users'}
+            </option>
+          </select>
+          
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: '8px',
+                color: 'var(--text-muted)',
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              value={searchVal}
+              onChange={(e) => setSearchVal(e.target.value)}
+              placeholder={searchType === 'user' ? (language === 'vn' ? 'Tìm người dùng...' : 'Search users...') : t.searchPlaceholder}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                paddingLeft: '32px',
+                paddingRight: '8px',
+                height: '32px',
+                outline: 'none',
+                fontSize: '14px',
+              }}
+            />
+          </div>
         </form>
       </div>
 
-      {/* Right Column: User Info, Wallet, Notifications & Actions */}
+      {/* Cột phải: Thông tin người dùng, Ví, Notifications & Hành động */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', justifyContent: 'flex-end', width: '40%' }}>
-        {/* Wallet Balance Widget */}
+        {/* Widget hiển thị số dư ví (Wallet Balance) */}
         {user && (
           <div
             onClick={() => navigate('/wallet')}
@@ -239,7 +304,7 @@ export const TopBar = () => {
           </div>
         )}
 
-        {/* Create Post Header button */}
+        {/* Nút đăng bài viết trên Header */}
         {user && (
           <button
             onClick={() => navigate('/explore?upload=true')}
@@ -260,7 +325,7 @@ export const TopBar = () => {
           </button>
         )}
 
-        {/* Notification indicator */}
+        {/* Chỉ báo notification */}
         {user && (
           <div style={{ position: 'relative' }} ref={dropdownRef}>
             <button
@@ -302,7 +367,7 @@ export const TopBar = () => {
               )}
             </button>
 
-            {/* Notification Dropdown */}
+            {/* Dropdown hiển thị notifications */}
             {showNotif && (
               <div
                 className="glass-panel animate-fade-in"
@@ -330,7 +395,7 @@ export const TopBar = () => {
                     borderBottom: '1px solid var(--glass-border)',
                   }}
                 >
-                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{t.notifications || (language === 'vn' ? 'Thông báo' : 'Notifications')} ({notifications.length})</span>
+                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{t.notifications} ({notifications.length})</span>
                   {unreadCount > 0 && (
                     <button
                       onClick={() => markAllRead()}
@@ -347,7 +412,7 @@ export const TopBar = () => {
                       }}
                     >
                       <CheckCircle size={14} />
-                      Đánh dấu đã đọc
+                      {t.markAllRead}
                     </button>
                   )}
                 </div>
@@ -355,7 +420,7 @@ export const TopBar = () => {
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {notifications.length === 0 ? (
                     <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                      Không có thông báo mới.
+                      {t.noNewNotifications}
                     </div>
                   ) : (
                     notifications.map((notif) => (
@@ -405,9 +470,9 @@ export const TopBar = () => {
             )}
           </div>
         )}
-        {/* Notification indicator (ends above) */}
+        {/* Chỉ báo notification (kết thúc phía trên) */}
 
-        {/* User profile avatar, nickname, and Login/Logout buttons */}
+        {/* Avatar, biệt danh người dùng, và các nút Đăng nhập/Đăng xuất */}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div

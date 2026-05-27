@@ -23,12 +23,12 @@ export const createCommission = async (req, res) => {
       return res.status(400).json({ message: 'You cannot commission yourself' });
     }
 
-    // Check client balance first
+    // Kiểm tra số dư của client trước
     if (req.user.walletBalance < price) {
       return res.status(400).json({ message: 'Insufficient wallet balance' });
     }
 
-    // 1. Create commission record
+    // 1. Tạo bản ghi commission
     const commission = await Commission.create({
       clientId,
       artistId,
@@ -41,10 +41,10 @@ export const createCommission = async (req, res) => {
       paymentStatus: 'unpaid',
     });
 
-    // 2. Lock client funds in escrow immediately
+    // 2. Khóa tiền của client trong escrow ngay lập tức
     await walletService.holdInEscrow(commission._id);
 
-    // 3. Fire notification to artist
+    // 3. Gửi notification cho artist
     await notificationService.createNotification({
       recipientId: artistId,
       actorId: clientId,
@@ -114,7 +114,7 @@ export const rejectCommission = async (req, res) => {
       return res.status(400).json({ message: 'Commission cannot be rejected at this stage' });
     }
 
-    // Reject and refund client
+    // Từ chối và hoàn tiền cho client
     commission.status = 'rejected';
     await commission.save();
 
@@ -152,12 +152,12 @@ export const cancelCommission = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // Client can cancel only when 'pending' (before acceptance)
+    // Client chỉ có thể hủy khi trạng thái là 'pending' (trước khi được chấp nhận)
     if (isClient && commission.status !== 'pending') {
       return res.status(400).json({ message: 'You cannot cancel a commission after the artist accepts it' });
     }
 
-    // Artist can cancel at any stage except completed/canceled/rejected
+    // Artist có thể hủy ở bất kỳ giai đoạn nào ngoại trừ completed/canceled/rejected
     if (isArtist && ['completed', 'canceled', 'rejected'].includes(commission.status)) {
       return res.status(400).json({ message: 'Commission is already finished' });
     }
@@ -200,17 +200,17 @@ export const completeCommission = async (req, res) => {
     }
 
     if (!['accepted', 'in_progress'].includes(commission.status)) {
-      commission.status = 'accepted'; // fallback just in case
+      commission.status = 'accepted'; // fallback đề phòng trường hợp lỗi
     }
 
-    // Require an uploaded artwork image for completion
+    // Yêu cầu tải lên hình ảnh artwork để hoàn thành
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'Please upload the completed artwork files' });
     }
 
     const imageUrls = await uploadMultipleToCloudinary(req.files);
 
-    // Create an illustration for the completed commission work
+    // Tạo một illustration cho tác phẩm commission đã hoàn thành
     const resultIllustration = await Illustration.create({
       artistId: req.user.id,
       title: `[Commission Result] ${commission.title}`,
@@ -224,10 +224,10 @@ export const completeCommission = async (req, res) => {
     commission.resultIllustrationId = resultIllustration._id;
     await commission.save();
 
-    // Release escrowed funds to artist
+    // Giải phóng tiền từ escrow cho artist
     await walletService.releaseEscrow(commission._id);
 
-    // Notify Client
+    // Gửi notification cho Client
     await notificationService.createNotification({
       recipientId: commission.clientId,
       actorId: req.user.id,

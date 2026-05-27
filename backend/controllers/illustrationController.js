@@ -9,7 +9,7 @@ import { uploadMultipleToCloudinary } from '../utils/cloudinary.js';
 
 
 /**
- * Helper to update user denormalized interaction statistics
+ * Helper để cập nhật các thống kê tương tác phi chuẩn hóa (denormalized interaction statistics) của người dùng
  */
 const updateArtistStats = async (artistId) => {
   const illustrations = await Illustration.find({ artistId });
@@ -34,7 +34,7 @@ export const createIllustration = async (req, res) => {
       return res.status(400).json({ message: 'At least one image file is required' });
     }
 
-    // Parse tags if sent as stringified JSON or comma-separated
+    // Parse tags nếu được gửi dưới dạng chuỗi JSON hoặc phân tách bằng dấu phẩy
     let parsedTags = [];
     if (tags) {
       try {
@@ -49,7 +49,7 @@ export const createIllustration = async (req, res) => {
 
     const userDeclaredAI = isAIGenerated === 'true' || isAIGenerated === true;
 
-    // Call Hugging Face API to detect AI if user did not declare it
+    // Gọi Hugging Face API để phát hiện AI nếu người dùng không tự khai báo
     if (!userDeclaredAI && req.files && req.files[0]) {
       console.log(`[Hugging Face Scan] Đang tiến hành quét tác phẩm "${title}" bằng AI Image Detector...`);
       try {
@@ -107,8 +107,8 @@ export const createIllustration = async (req, res) => {
       console.log(`[Hugging Face Scan] Người dùng tự khai báo tác phẩm "${title}" được vẽ bằng AI. Bỏ qua bước quét tự động.`);
     }
 
-    // Upload to Cloudinary (will fall back to local disk storage if credentials are not configured)
-    // Note: Must run AFTER Hugging Face scan because Cloudinary upload deletes local temp files.
+    // Tải lên Cloudinary (sẽ fallback về lưu trữ đĩa cục bộ nếu credentials chưa được cấu hình)
+    // Note: Phải chạy SAU khi scan Hugging Face vì việc tải lên Cloudinary sẽ xóa các file tạm cục bộ.
     const imageUrls = await uploadMultipleToCloudinary(req.files);
 
     const illustration = await Illustration.create({
@@ -126,7 +126,7 @@ export const createIllustration = async (req, res) => {
       },
     });
 
-    // Notify all followers
+    // Gửi notification cho tất cả người theo dõi (followers)
     const followers = await Follow.find({ followingId: req.user.id });
     for (const follow of followers) {
       await notificationService.createNotification({
@@ -155,12 +155,12 @@ export const getIllustrationById = async (req, res) => {
       return res.status(404).json({ message: 'Illustration not found' });
     }
 
-    // Increment views asynchronously
+    // Tăng số lượt xem (views) bất đồng bộ
     illustration.viewsCount += 1;
     await illustration.save();
     updateArtistStats(illustration.artistId._id).catch(err => console.error('[Stats update error]', err));
 
-    // Check if the current user has liked or bookmarked this illustration
+    // Kiểm tra xem người dùng hiện tại đã like hoặc bookmark illustration này chưa
     let liked = false;
     let bookmarked = false;
 
@@ -187,7 +187,7 @@ export const deleteIllustration = async (req, res) => {
       return res.status(404).json({ message: 'Illustration not found' });
     }
 
-    // Check ownership
+    // Kiểm tra quyền sở hữu (ownership)
     if (illustration.artistId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'You are not authorized to delete this work' });
     }
@@ -228,7 +228,7 @@ export const toggleLike = async (req, res) => {
       illustration.likesCount += 1;
       await illustration.save();
 
-      // Trigger notification
+      // Kích hoạt notification
       await notificationService.createNotification({
         recipientId: illustration.artistId,
         actorId: userId,
@@ -271,7 +271,7 @@ export const toggleBookmark = async (req, res) => {
       illustration.bookmarksCount += 1;
       await illustration.save();
 
-      // Trigger notification
+      // Kích hoạt notification
       await notificationService.createNotification({
         recipientId: illustration.artistId,
         actorId: userId,
@@ -292,8 +292,8 @@ export const toggleBookmark = async (req, res) => {
 };
 
 /**
- * Fetch feeds:
- * Supports querying by search keyword, tag, or artistId
+ * Lấy danh sách feeds:
+ * Hỗ trợ query theo từ khóa tìm kiếm, tag, hoặc artistId
  */
 export const getIllustrations = async (req, res) => {
   try {
@@ -301,7 +301,7 @@ export const getIllustrations = async (req, res) => {
 
     const query = { visibility: 'everyone' };
     
-    // Logged in users can see everyone + logged_in visibility works
+    // Người dùng đã đăng nhập có thể thấy mọi người + cơ chế hiển thị logged_in hoạt động
     if (req.user) {
       query.visibility = { $in: ['everyone', 'logged_in'] };
     }
@@ -320,7 +320,7 @@ export const getIllustrations = async (req, res) => {
 
     if (artistId) {
       query.artistId = artistId;
-      // Delete general visibility filter so artists can view their own private posts if needed
+      // Xóa bộ lọc visibility chung để artist có thể xem các bài viết private của chính họ nếu cần
       if (req.user && req.user.id === artistId) {
         delete query.visibility;
       }
@@ -347,21 +347,30 @@ export const getIllustrations = async (req, res) => {
     let illustrationsQuery = Illustration.find(query)
       .populate('artistId', 'username nickname avatarUrl isArtist');
 
-    // Sorting strategies
+    // Các chiến lược sắp xếp (sorting strategies)
     if (sort === 'popular') {
-      // Hot ranking: likes + bookmarks + view fraction
+      // Sắp xếp Hot ranking: likes + bookmarks + tỉ lệ views
       illustrationsQuery = illustrationsQuery.sort({ likesCount: -1, bookmarksCount: -1, viewsCount: -1 });
     } else if (sort === 'recommended') {
-      // Recommended: sort by views and likes
+      // Sắp xếp Recommended: sắp xếp theo views và likes
       illustrationsQuery = illustrationsQuery.sort({ viewsCount: -1, likesCount: -1 });
+    } else if (sort === 'oldest') {
+      illustrationsQuery = illustrationsQuery.sort({ createdAt: 1 });
+    } else if (sort === 'popularity') {
+      illustrationsQuery = illustrationsQuery.sort({ viewsCount: -1 });
+    } else if (sort === 'likes') {
+      illustrationsQuery = illustrationsQuery.sort({ likesCount: -1 });
+    } else if (sort === 'bookmarks') {
+      illustrationsQuery = illustrationsQuery.sort({ bookmarksCount: -1 });
     } else {
-      // Newest
+      // Mới nhất
       illustrationsQuery = illustrationsQuery.sort({ createdAt: -1 });
     }
 
+
     const illustrations = await illustrationsQuery.exec();
 
-    // Check like/bookmark status if logged in
+    // Kiểm tra trạng thái like/bookmark nếu đã đăng nhập
     let results = illustrations;
     if (req.user) {
       const userLikes = await Like.find({ userId: req.user.id });
@@ -385,7 +394,7 @@ export const getIllustrations = async (req, res) => {
 };
 
 /**
- * Chronological feed of artists followed by the current user
+ * Feed theo thứ tự thời gian của các artist được theo dõi bởi người dùng hiện tại
  */
 export const getFollowedFeed = async (req, res) => {
   try {
@@ -403,7 +412,7 @@ export const getFollowedFeed = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate('artistId', 'username nickname avatarUrl isArtist');
 
-    // Attach interaction status
+    // Đính kèm trạng thái tương tác
     const userLikes = await Like.find({ userId: req.user.id });
     const likedSet = new Set(userLikes.map(l => l.illustrationId.toString()));
 
@@ -424,7 +433,7 @@ export const getFollowedFeed = async (req, res) => {
 };
 
 /**
- * Get top trending tags based on tag occurrences in the system
+ * Lấy các trending tags hàng đầu dựa trên số lần xuất hiện của tag trong hệ thống
  */
 export const getTrendingTags = async (req, res) => {
   try {
@@ -451,7 +460,7 @@ export const getBookmarkedIllustrations = async (req, res) => {
       visibility: { $in: ['everyone', 'logged_in'] },
     }).populate('artistId', 'username nickname avatarUrl isArtist');
 
-    // Make sure we check like status
+    // Đảm bảo chúng ta kiểm tra trạng thái like
     const userLikes = await Like.find({ userId: req.user.id });
     const likedSet = new Set(userLikes.map((l) => l.illustrationId.toString()));
 
@@ -501,3 +510,24 @@ export const updateIllustration = async (req, res) => {
     res.status(500).json({ message: 'Server error updating illustration' });
   }
 };
+
+export const searchTags = async (req, res) => {
+  try {
+    const { search } = req.query;
+    if (!search) {
+      return res.status(200).json([]);
+    }
+    const aggregation = await Illustration.aggregate([
+      { $unwind: '$tags' },
+      { $match: { tags: { $regex: search, $options: 'i' } } },
+      { $group: { _id: '$tags', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 20 },
+    ]);
+    res.status(200).json(aggregation);
+  } catch (error) {
+    console.error('[Search Tags Error]', error);
+    res.status(500).json({ message: 'Server error searching tags' });
+  }
+};
+

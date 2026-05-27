@@ -4,7 +4,7 @@ import User from '../models/User.js';
 export const protect = async (req, res, next) => {
   let token;
 
-  // Try checking from cookies first, then Authorization header
+  // Thử kiểm tra từ cookie trước, sau đó mới đến header Authorization
   if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
   } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {

@@ -104,6 +104,9 @@ export const illustrationApi = api.injectEndpoints({
         { type: 'Illustration', id: 'LIST' },
       ],
     }),
+    searchTags: builder.query<{ _id: string; count: number }[], string>({
+      query: (search) => `/illustrations/tags/search?search=${encodeURIComponent(search)}`,
+    }),
   }),
 });
 
@@ -118,4 +121,5 @@ export const {
   useToggleBookmarkMutation,
   useGetBookmarkedIllustrationsQuery,
   useUpdateIllustrationMutation,
+  useSearchTagsQuery,
 } = illustrationApi;

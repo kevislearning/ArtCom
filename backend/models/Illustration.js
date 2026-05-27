@@ -75,7 +75,7 @@ const illustrationSchema = new mongoose.Schema(
   }
 );
 
-// Create compound index for sorting search/feeds by date
+// Tạo compound index để sắp xếp tìm kiếm/feeds theo ngày
 illustrationSchema.index({ createdAt: -1 });
 illustrationSchema.index({ tags: 1, createdAt: -1 });
 

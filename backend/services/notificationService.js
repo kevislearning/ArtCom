@@ -3,7 +3,7 @@ import { sendToUser } from '../config/socket.js';
 
 export const notificationService = {
   /**
-   * Create a notification in the database and push it in real-time if the user is online
+   * Tạo một notification trong cơ sở dữ liệu và push theo thời gian thực nếu người dùng online
    */
   async createNotification({
     recipientId,
@@ -13,7 +13,7 @@ export const notificationService = {
     targetModel = null,
     contentPreview = '',
   }) {
-    // If actor is performing action on themselves (e.g. self-liking, self-commenting), skip notification
+    // Nếu actor đang thực hiện hành động trên chính họ (ví dụ: tự like, tự comment), bỏ qua notification
     if (actorId && actorId.toString() === recipientId.toString()) {
       return null;
     }
@@ -27,18 +27,18 @@ export const notificationService = {
       contentPreview,
     });
 
-    // Populate actor info for front-end visual mapping
+    // Populate thông tin actor để front-end ánh xạ trực quan
     const populated = await Notification.findById(notification._id)
       .populate('actorId', 'username nickname avatarUrl isArtist');
 
-    // Emit via Socket.io
+    // Phát phát qua Socket.io
     sendToUser(recipientId, 'new_notification', populated);
 
     return populated;
   },
 
   /**
-   * Mark all notifications as read for a specific user
+   * Đánh dấu tất cả notification là đã đọc cho một người dùng cụ thể
    */
   async markAllAsRead(userId) {
     await Notification.updateMany({ recipientId: userId, isRead: false }, { isRead: true });
@@ -46,7 +46,7 @@ export const notificationService = {
   },
 
   /**
-   * Mark a single notification as read
+   * Đánh dấu một notification duy nhất là đã đọc
    */
   async markAsRead(notificationId, userId) {
     const notification = await Notification.findOneAndUpdate(

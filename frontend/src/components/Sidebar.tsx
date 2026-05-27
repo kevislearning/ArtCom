@@ -54,7 +54,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         zIndex: 100,
       }}
     >
-      {/* Sidebar Toggle Hamburger Menu */}
+      {/* Hamburger Menu bật/tắt Sidebar */}
       <div
         style={{
           display: 'flex',
@@ -86,7 +86,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         </button>
       </div>
 
-      {/* Navigation list */}
+      {/* Danh sách điều hướng (Navigation list) */}
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -117,7 +117,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         })}
       </nav>
 
-      {/* Auth user foot info (Moved to TopBar) */}
+      {/* Thông tin người dùng ở chân trang (Đã chuyển sang TopBar) */}
       <div style={{ marginTop: 'auto' }}></div>
     </aside>
   );

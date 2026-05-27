@@ -11,14 +11,14 @@ export const SettingsPage = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = language === 'en' ? translations.en : translations.vn;
 
-  // Password Change States
+  // Các trạng thái thay đổi mật khẩu
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [pwSuccessMsg, setPwSuccessMsg] = useState('');
   const [pwErrorMsg, setPwErrorMsg] = useState('');
 
-  // Theme State
+  // Trạng thái Theme
   const [theme, setTheme] = useState<'dark' | 'light'>(
     (localStorage.getItem('theme') as 'dark' | 'light') || 'dark'
   );
@@ -80,7 +80,7 @@ export const SettingsPage = () => {
         }} 
         className="settings-grid"
       >
-        {/* Left Column: Language and Theme Settings Card */}
+        {/* Cột trái: Thẻ cài đặt ngôn ngữ và Theme */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -94,7 +94,7 @@ export const SettingsPage = () => {
             width: '100%',
           }}
         >
-          {/* Language Switch */}
+          {/* Bộ chuyển đổi ngôn ngữ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Globe size={18} style={{ color: 'var(--accent)' }} />
@@ -149,7 +149,7 @@ export const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Theme Switch */}
+          {/* Bộ chuyển đổi Theme */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {theme === 'dark' ? <Moon size={18} style={{ color: 'var(--primary)' }} /> : <Sun size={18} style={{ color: 'var(--warning)' }} />}
@@ -205,7 +205,7 @@ export const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Right Column: Secure Password Change Card */}
+        {/* Cột phải: Thẻ thay đổi mật khẩu bảo mật */}
         {user ? (
           <form
             onSubmit={handlePasswordChange}

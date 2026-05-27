@@ -29,7 +29,7 @@ const messageSchema = new mongoose.Schema(
   }
 );
 
-// Compound index to fetch conversations between two users quickly
+// Compound index để lấy các cuộc hội thoại giữa hai người dùng nhanh chóng
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: 1 });
 messageSchema.index({ receiverId: 1, senderId: 1, createdAt: 1 });
 

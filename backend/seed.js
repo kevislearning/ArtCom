@@ -5,7 +5,7 @@ import path from 'path';
 import https from 'https';
 import dotenv from 'dotenv';
 
-// Import Mongoose Models
+// Nhập các mô hình Mongoose
 import User from './models/User.js';
 import Illustration from './models/Illustration.js';
 import Like from './models/Like.js';
@@ -17,14 +17,14 @@ import WalletTransaction from './models/WalletTransaction.js';
 import Message from './models/Message.js';
 import Notification from './models/Notification.js';
 
-// Load environment variables
+// Tải các biến môi trường
 dotenv.config();
 
-// Helper: Download image from URL and save locally
+// Helper: Tải hình ảnh từ URL và lưu cục bộ
 const downloadImage = (url, filepath) => {
   return new Promise((resolve, reject) => {
     https.get(url, (response) => {
-      // Handle HTTP redirects (very common with image URLs)
+      // Xử lý chuyển hướng HTTP (rất phổ biến với URL hình ảnh)
       if (response.statusCode === 301 || response.statusCode === 302) {
         downloadImage(response.headers.location, filepath).then(resolve).catch(reject);
         return;
@@ -43,7 +43,7 @@ const downloadImage = (url, filepath) => {
       });
       
       fileStream.on('error', (err) => {
-        fs.unlink(filepath, () => {}); // Delete file on failure
+        fs.unlink(filepath, () => {}); // Xóa file khi thất bại
         reject(err);
       });
     }).on('error', (err) => {
@@ -52,20 +52,20 @@ const downloadImage = (url, filepath) => {
   });
 };
 
-// 12 Unsplash High-Quality Creative/Artistic Images
+// 12 hình ảnh nghệ thuật/sáng tạo chất lượng cao từ Unsplash
 const seedImageUrls = [
-  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop', // 1. Fine art oil/digital painting
-  'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=600&auto=format&fit=crop', // 2. Abstract flowy art
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop', // 3. Glassmorphic 3D waves
-  'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop', // 4. Cozy Anime street
-  'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600&auto=format&fit=crop', // 5. Retro Cyberpunk lights
-  'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop', // 6. Technology Circuit Cyberpunk
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop', // 7. Mountain river landscape
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop', // 8. Fantasy cosmos galaxy
-  'https://images.unsplash.com/photo-1515462277126-270d878326e5?q=80&w=600&auto=format&fit=crop', // 9. Neon organic fluid
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop', // 10. Sunset beach watercolor feel
-  'https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=600&auto=format&fit=crop', // 11. Cozy cafe aesthetic
-  'https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=600&auto=format&fit=crop'  // 12. Fine sculpture colorful lighting
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop', // 1. Tranh sơn dầu/kỹ thuật số nghệ thuật
+  'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=600&auto=format&fit=crop', // 2. Nghệ thuật trừu tượng mềm mại
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop', // 3. Sóng 3D kính mờ (glassmorphic)
+  'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop', // 4. Đường phố Anime ấm cúng
+  'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600&auto=format&fit=crop', // 5. Ánh sáng Cyberpunk hoài cổ
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop', // 6. Bản mạch công nghệ Cyberpunk
+  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop', // 7. Phong cảnh sông núi
+  'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop', // 8. Thiên hà vũ trụ giả tưởng
+  'https://images.unsplash.com/photo-1515462277126-270d878326e5?q=80&w=600&auto=format&fit=crop', // 9. Chất lỏng hữu cơ Neon
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop', // 10. Bãi biển hoàng hôn phong cách màu nước
+  'https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=600&auto=format&fit=crop', // 11. Thẩm mỹ quán cà phê ấm cúng
+  'https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=600&auto=format&fit=crop'  // 12. Điêu khắc tinh xảo với ánh sáng màu sắc
 ];
 
 const runSeed = async () => {
@@ -75,7 +75,7 @@ const runSeed = async () => {
     await mongoose.connect(mongoUri);
     console.log('[Seed] Database Connected.');
 
-    // Step 1: Wipe all existing records in core collections
+    // Bước 1: Xóa toàn bộ các bản ghi hiện có trong các collection cốt lõi
     console.log('[Seed] Wiping existing data collections...');
     await User.deleteMany({});
     await Illustration.deleteMany({});
@@ -89,7 +89,7 @@ const runSeed = async () => {
     await Notification.deleteMany({});
     console.log('[Seed] All database collections wiped successfully.');
 
-    // Step 2: Download the 12 Unsplash images to local uploads/
+    // Bước 2: Tải 12 hình ảnh Unsplash về thư mục uploads/ cục bộ
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       console.log(`[Seed] Creating uploads directory at ${uploadsDir}`);
@@ -113,13 +113,13 @@ const runSeed = async () => {
     }
     console.log('[Seed] Finished image download phase.');
 
-    // Step 3: Seed Users
+    // Bước 3: Seed người dùng (Users)
     console.log('[Seed] Seeding default users (fans and artists)...');
     const defaultPassword = 'password123';
     const passwordHash = bcrypt.hashSync(defaultPassword, 10);
 
     const usersData = [
-      // Fans (Regular members with wallet balances to make requests)
+      // Fans (Thành viên thông thường với số dư ví để tạo yêu cầu)
       {
         username: 'fan_huy',
         email: 'huy@gmail.com',
@@ -129,7 +129,7 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=HuyNguyen',
         bannerUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=1200&auto=format&fit=crop',
         isArtist: false,
-        walletBalance: 1000000 // 1,000,000₫ (Initial 5M - 1.5M escrow release - 2.5M escrow locked) -> adjusted below in ledger
+        walletBalance: 1000000 // 1,000,000₫ (Ban đầu 5M - 1.5M giải phóng escrow - 2.5M khóa escrow) -> được điều chỉnh dưới phần sổ cái ledger
       },
       {
         username: 'fan_vy',
@@ -140,9 +140,9 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=VyVy',
         bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
         isArtist: false,
-        walletBalance: 9500000 // 9,500,000₫ (Initial 10M - 500k escrow hold - 800k hold + 800k refund)
+        walletBalance: 9500000 // 9,500,000₫ (Ban đầu 10M - 500k giữ escrow - 800k giữ + 800k hoàn tiền)
       },
-      // Artists
+      // Artists (Nghệ sĩ)
       {
         username: 'artist_phong',
         email: 'phong@gmail.com',
@@ -152,7 +152,7 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=PhongArt',
         bannerUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
         isArtist: true,
-        walletBalance: 1500000, // 1,500,000₫ earned from completed commission
+        walletBalance: 1500000, // 1,500,000₫ kiếm được từ commission đã hoàn thành
         socialLinks: { twitter: 'https://twitter.com/phongart', behance: 'https://behance.net/phongart', artstation: 'https://artstation.com/phongart' }
       },
       {
@@ -164,7 +164,7 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=VyAnime',
         bannerUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1200&auto=format&fit=crop',
         isArtist: true,
-        walletBalance: 0, // 500k is locked in escrow currently (in_progress)
+        walletBalance: 0, // 500k hiện đang được khóa trong escrow (in_progress)
         socialLinks: { twitter: 'https://twitter.com/vyanime', behance: 'https://behance.net/vyanime' }
       },
       {
@@ -176,7 +176,7 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=LinhWatercolor',
         bannerUrl: 'https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=1200&auto=format&fit=crop',
         isArtist: true,
-        walletBalance: 0, // 800k commission was rejected and refunded to fan_vy
+        walletBalance: 0, // 800k commission đã bị từ chối và hoàn tiền cho fan_vy
         socialLinks: { behance: 'https://behance.net/linhwater', artstation: 'https://artstation.com/linhwater' }
       },
       {
@@ -188,7 +188,7 @@ const runSeed = async () => {
         avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=MinhCyber',
         bannerUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=1200&auto=format&fit=crop',
         isArtist: true,
-        walletBalance: 0, // 2.5M commission is pending and locked in escrow
+        walletBalance: 0, // 2.5M commission đang chờ xử lý và được khóa trong escrow
         socialLinks: { twitter: 'https://twitter.com/minhcyber', artstation: 'https://artstation.com/minhcyber' }
       }
     ];
@@ -203,11 +203,11 @@ const runSeed = async () => {
 
     console.log('[Seed] Users seeded successfully.');
 
-    // Step 4: Seed Illustrations for Artists
+    // Bước 4: Seed các tác phẩm minh họa (Illustrations) cho Artist
     console.log('[Seed] Seeding illustrations/artworks...');
     
     const illustrationsData = [
-      // Artist 1: Phong Art (Landscapes)
+      // Artist 1: Phong Art (Phong cảnh)
       {
         artistId: aPhong._id,
         title: 'Sự tĩnh lặng của đại ngàn',
@@ -289,12 +289,12 @@ const runSeed = async () => {
         commentsCount: 0
       },
 
-      // Artist 3: Linh Watercolor (Watercolor Fine Art)
+      // Artist 3: Linh Watercolor (Màu nước nghệ thuật)
       {
         artistId: aLinh._id,
         title: 'Tinh hoa tượng nghệ thuật phục hưng',
         description: 'Tác phẩm phác họa tượng điêu khắc Phục Hưng cổ điển phối cùng vệt màu nước rực rỡ hiện đại.',
-        imageUrls: [localImagePaths[11]], // Using index 11 for fine sculpture
+        imageUrls: [localImagePaths[11]], // Sử dụng ảnh index 11 cho điêu khắc tinh xảo
         tags: ['traditional', 'watercolor', 'art', 'sculpture'],
         visibility: 'everyone',
         commentsEnabled: true,
@@ -307,7 +307,7 @@ const runSeed = async () => {
         artistId: aLinh._id,
         title: 'Tinh hoa đóa hồng sớm mai',
         description: 'Bức vẽ màu nước tả thực cận cảnh đóa hoa hồng đỏ thắm còn đọng những giọt sương sớm lung linh.',
-        imageUrls: [localImagePaths[9]], // Sunset beach watercolor tone
+        imageUrls: [localImagePaths[9]], // Bãi biển hoàng hôn tông màu nước
         tags: ['watercolor', 'traditional', 'rose', 'nature'],
         visibility: 'everyone',
         commentsEnabled: true,
@@ -320,22 +320,22 @@ const runSeed = async () => {
         artistId: aLinh._id,
         title: 'Tách cà phê bình yên',
         description: 'Vẽ tĩnh vật một buổi sáng ấm áp yên bình bên khung cửa sổ kèm tách cà phê nghi ngút khói.',
-        imageUrls: [localImagePaths[10]], // Cozy cafe aesthetic
+        imageUrls: [localImagePaths[10]], // Thẩm mỹ quán cà phê ấm cúng
         tags: ['watercolor', 'traditional', 'coffee', 'cozy'],
         visibility: 'everyone',
-        commentsEnabled: false, // Comments locked
+        commentsEnabled: false, // Comments bị khóa
         viewsCount: 50,
         likesCount: 1,
         bookmarksCount: 0,
         commentsCount: 0
       },
 
-      // Artist 4: Minh Cyber (Cyberpunk futuristic)
+      // Artist 4: Minh Cyber (Cyberpunk tương lai)
       {
         artistId: aMinh._id,
         title: 'Đêm Neon rực sáng cyberpunk',
         description: 'Góc phố đêm lung linh huyền ảo với ánh đèn neon quảng cáo nhiều màu sắc tại một đại lộ tương lai đầy xe bay.',
-        imageUrls: [localImagePaths[4]], // Repeating 5 for neon retro cyberpunk lights
+        imageUrls: [localImagePaths[4]], // Lặp lại ảnh 5 cho ánh sáng retro cyberpunk neon
         tags: ['cyberpunk', 'digitalart', 'future', 'neon'],
         visibility: 'everyone',
         commentsEnabled: true,
@@ -348,7 +348,7 @@ const runSeed = async () => {
         artistId: aMinh._id,
         title: 'Dòng chảy bo mạch công nghệ',
         description: 'Ý tưởng trừu tượng về sự tích hợp của con chip sinh học nhân tạo trong não bộ tương lai.',
-        imageUrls: [localImagePaths[5]], // Circuit board cyberpunk texture
+        imageUrls: [localImagePaths[5]], // Kết cấu bản mạch cyberpunk
         tags: ['cyberpunk', 'future', 'digitalart', 'chip'],
         visibility: 'everyone',
         commentsEnabled: true,
@@ -361,7 +361,7 @@ const runSeed = async () => {
         artistId: aMinh._id,
         title: 'Đường cong dòng ánh sáng neon',
         description: 'Phân tích trừu tượng 3D về các luồng hạt ánh sáng di chuyển tự do trong mạng lưới ảo.',
-        imageUrls: [localImagePaths[8]], // Using neon organic fluid photo
+        imageUrls: [localImagePaths[8]], // Sử dụng ảnh chất lỏng hữu cơ neon
         tags: ['cyberpunk', 'future', 'sci-fi', 'glow'],
         visibility: 'everyone',
         commentsEnabled: true,
@@ -375,7 +375,7 @@ const runSeed = async () => {
     const seededIllustrations = await Illustration.insertMany(illustrationsData);
     console.log('[Seed] Artworks seeded successfully.');
 
-    // Step 5: Seed Follows
+    // Bước 5: Seed theo dõi (Follows)
     console.log('[Seed] Seeding following relations...');
     const followsData = [
       { followerId: uHuy._id, followingId: aPhong._id },
@@ -388,51 +388,51 @@ const runSeed = async () => {
     ];
     await Follow.insertMany(followsData);
 
-    // Step 6: Seed Likes and Bookmarks to match counters
+    // Bước 6: Seed các lượt Like và Bookmark để khớp với bộ đếm
     console.log('[Seed] Seeding likes and bookmarks...');
-    // Likes
+    // Lượt thích (Likes)
     await Like.create([
-      { userId: uHuy._id, illustrationId: seededIllustrations[0]._id }, // Phong Mountain
+      { userId: uHuy._id, illustrationId: seededIllustrations[0]._id }, // Phong cảnh núi của Phong
       { userId: uVy._id, illustrationId: seededIllustrations[0]._id },
       { userId: aVy._id, illustrationId: seededIllustrations[0]._id },
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[1]._id }, // Phong Sunset beach
+      { userId: uHuy._id, illustrationId: seededIllustrations[1]._id }, // Bãi biển hoàng hôn của Phong
       { userId: uVy._id, illustrationId: seededIllustrations[1]._id },
 
-      { userId: uVy._id, illustrationId: seededIllustrations[2]._id }, // Phong City
+      { userId: uVy._id, illustrationId: seededIllustrations[2]._id }, // Thành phố của Phong
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[3]._id }, // Vy Sakura
+      { userId: uHuy._id, illustrationId: seededIllustrations[3]._id }, // Hoa anh đào của Vy
       { userId: uVy._id, illustrationId: seededIllustrations[3]._id },
       { userId: aPhong._id, illustrationId: seededIllustrations[3]._id },
       { userId: aMinh._id, illustrationId: seededIllustrations[3]._id },
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[4]._id }, // Vy Magic
+      { userId: uHuy._id, illustrationId: seededIllustrations[4]._id }, // Phép thuật của Vy
       { userId: uVy._id, illustrationId: seededIllustrations[4]._id },
       { userId: aPhong._id, illustrationId: seededIllustrations[4]._id },
 
-      { userId: uVy._id, illustrationId: seededIllustrations[5]._id }, // Vy Chibi
+      { userId: uVy._id, illustrationId: seededIllustrations[5]._id }, // Chibi của Vy
       { userId: uHuy._id, illustrationId: seededIllustrations[5]._id },
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[6]._id }, // Linh Sculpture
+      { userId: uHuy._id, illustrationId: seededIllustrations[6]._id }, // Điêu khắc của Linh
       { userId: aPhong._id, illustrationId: seededIllustrations[6]._id },
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[7]._id }, // Linh Rose
+      { userId: uHuy._id, illustrationId: seededIllustrations[7]._id }, // Hoa hồng của Linh
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[8]._id }, // Linh Coffee
+      { userId: uHuy._id, illustrationId: seededIllustrations[8]._id }, // Cà phê của Linh
 
-      { userId: uHuy._id, illustrationId: seededIllustrations[9]._id }, // Minh Cyber Neon
+      { userId: uHuy._id, illustrationId: seededIllustrations[9]._id }, // Cyber Neon của Minh
       { userId: uVy._id, illustrationId: seededIllustrations[9]._id },
       { userId: aVy._id, illustrationId: seededIllustrations[9]._id },
       { userId: aPhong._id, illustrationId: seededIllustrations[9]._id },
 
-      { userId: uVy._id, illustrationId: seededIllustrations[10]._id }, // Minh Chip
+      { userId: uVy._id, illustrationId: seededIllustrations[10]._id }, // Vi mạch của Minh
       { userId: aVy._id, illustrationId: seededIllustrations[10]._id },
 
-      { userId: uVy._id, illustrationId: seededIllustrations[11]._id }, // Minh Glow
+      { userId: uVy._id, illustrationId: seededIllustrations[11]._id }, // Ánh sáng của Minh
       { userId: uHuy._id, illustrationId: seededIllustrations[11]._id }
     ]);
 
-    // Bookmarks
+    // Lượt lưu (Bookmarks)
     await Bookmark.create([
       { userId: uHuy._id, illustrationId: seededIllustrations[0]._id },
       { userId: uVy._id, illustrationId: seededIllustrations[0]._id },
@@ -459,10 +459,10 @@ const runSeed = async () => {
       { userId: uVy._id, illustrationId: seededIllustrations[10]._id }
     ]);
 
-    // Step 7: Seed Comments (with parent-child nesting)
+    // Bước 7: Seed các bình luận (Comments) (với phân cấp cha-con)
     console.log('[Seed] Seeding comments (with threaded replies)...');
     
-    // Comment thread on Illustration 0 (Phong Art - mountain)
+    // Luồng bình luận trên Illustration 0 (Phong Art - núi)
     const comm1 = await Comment.create({
       illustrationId: seededIllustrations[0]._id,
       userId: uHuy._id,
@@ -476,7 +476,7 @@ const runSeed = async () => {
       content: 'Cảm ơn bạn nhiều nhé! Mình đã tốn khoảng 16 giờ làm việc liên tục để lên màu bầu trời cho vừa ý đó.'
     });
 
-    // Comment thread on Illustration 3 (Vy Anime - Sakura)
+    // Luồng bình luận trên Illustration 3 (Vy Anime - Sakura)
     const comm2 = await Comment.create({
       illustrationId: seededIllustrations[3]._id,
       userId: uVy._id,
@@ -492,55 +492,55 @@ const runSeed = async () => {
 
     console.log('[Seed] Comments seeded successfully.');
 
-    // Step 8: Seed Commissions
+    // Bước 8: Seed các Commission
     console.log('[Seed] Seeding commission requests (simulating the wallet escrow cycle)...');
 
     const commissionsData = [
-      // 1. Completed & Released payment
+      // 1. Đã hoàn thành & Đã giải phóng thanh toán (Released)
       {
         clientId: uHuy._id,
         artistId: aPhong._id,
         title: 'Vẽ phong cảnh ruộng bậc thang Tây Bắc mùa lúa chín',
         description: 'Yêu cầu vẽ một phong cảnh ruộng bậc thang Mù Cang Chải vào những ngày lúa chín vàng ươm dưới nắng thu rực rỡ, phong cách tả thực ấm áp để gia đình treo phòng khách.',
         price: 1500000,
-        deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days out
+        deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Còn 10 ngày
         status: 'completed',
         paymentStatus: 'paid_to_artist',
-        resultIllustrationId: seededIllustrations[0]._id, // Link to mountains painting
+        resultIllustrationId: seededIllustrations[0]._id, // Liên kết tới bức tranh phong cảnh núi
         isPrivate: false
       },
-      // 2. In progress & Escrow locked
+      // 2. Đang thực hiện (In progress) & Escrow đã được khóa
       {
         clientId: uVy._id,
         artistId: aVy._id,
         title: 'Vẽ nhân vật Chibi cho Avatar stream game cá nhân',
         description: 'Vẽ 1 avatar dạng chibi siêu cưng, nhân vật tóc hồng thắt bím hai bên, đeo tai nghe mèo hồng, đang tươi cười say sưa chơi game.',
         price: 500000,
-        deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days out
+        deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // Còn 5 ngày
         status: 'in_progress',
         paymentStatus: 'escrow',
         isPrivate: false
       },
-      // 3. Pending approval & Escrow locked
+      // 3. Chờ phê duyệt (Pending approval) & Escrow đã được khóa
       {
         clientId: uHuy._id,
         artistId: aMinh._id,
         title: 'Thiết kế ảnh bìa Cyberpunk phong cách DJ Neon',
         description: 'Đặt làm banner cover kích thước chuẩn cho kênh Soundcloud cá nhân. Vẽ một nữ DJ cool ngầu đứng mix nhạc ngoài ban công tòa cao ốc tương lai tràn ngập ánh đèn neon rực rỡ.',
         price: 2500000,
-        deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days out
+        deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // Còn 15 ngày
         status: 'pending',
         paymentStatus: 'escrow',
         isPrivate: false
       },
-      // 4. Rejected & Refunded
+      // 4. Đã từ chối (Rejected) & Đã hoàn tiền (Refunded)
       {
         clientId: uVy._id,
         artistId: aLinh._id,
         title: 'Vẽ chân dung chú cún Corgi bằng màu nước truyền thống',
         description: 'Vẽ chân dung cận mặt của em cún Corgi lông vàng dễ thương đang há miệng cười, vẽ màu nước tỉ mỉ trên giấy Arches.',
         price: 800000,
-        deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // past deadline
+        deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // đã quá hạn chót (past deadline)
         status: 'rejected',
         paymentStatus: 'refunded',
         isPrivate: false
@@ -550,7 +550,7 @@ const runSeed = async () => {
     const seededCommissions = await Commission.insertMany(commissionsData);
     console.log('[Seed] Commissions seeded successfully.');
 
-    // Step 9: Seed Wallet Transactions Ledger
+    // Bước 9: Seed sổ cái các giao dịch ví (Wallet Transactions Ledger)
     console.log('[Seed] Seeding Wallet Ledger transactions...');
     const walletTransactionsData = [
       // Huy Nguyễn
@@ -617,7 +617,7 @@ const runSeed = async () => {
     await WalletTransaction.insertMany(walletTransactionsData);
     console.log('[Seed] Wallet Transactions ledger seeded successfully.');
 
-    // Step 10: Seed Direct Messaging Chat History
+    // Bước 10: Seed lịch sử chat tin nhắn trực tiếp (Direct Messaging)
     console.log('[Seed] Seeding simulated Chat messenger history...');
     const messagesData = [
       // Chat Huy & Phong
@@ -626,7 +626,7 @@ const runSeed = async () => {
         receiverId: aPhong._id,
         content: 'Chào bạn Phong Art! Mình vừa mới nạp tiền và gửi một yêu cầu commission vẽ phong cảnh Tây Bắc cho gia đình nhé. Bạn kiểm tra xem đã nhận được Brief chưa ạ?',
         isRead: true,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5h ago
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 giờ trước
       },
       {
         senderId: aPhong._id,
@@ -649,13 +649,13 @@ const runSeed = async () => {
         receiverId: aVy._id,
         content: 'Chào bạn Vy Anime dễ thương! Mình cực kỳ thích các nét vẽ chibi của bạn trên trang cá nhân. Mình có gửi yêu cầu vẽ avatar stream game ấy, không biết bạn rảnh nhận vẽ giúp mình không nhỉ?',
         isRead: true,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2h ago
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 giờ trước
       },
       {
         senderId: aVy._id,
         receiverId: uVy._id,
         content: 'Hi bạn Vy Vy ạ! Cảm ơn bạn rất nhiều vì đã yêu mến tranh của mình nha. Mình rảnh và đã nhấn chấp nhận vẽ rồi nhé! Mình sẽ vẽ một em chibi đeo tai mèo siêu cưng gửi bạn duyệt sớm nghen!',
-        isRead: false, // Unread message!
+        isRead: false, // Tin nhắn chưa đọc!
         createdAt: new Date(Date.now() - 1.8 * 60 * 60 * 1000)
       }
     ];
@@ -663,10 +663,10 @@ const runSeed = async () => {
     await Message.insertMany(messagesData);
     console.log('[Seed] Chat messenger data seeded successfully.');
 
-    // Step 11: Seed Notifications Alert list
+    // Bước 11: Seed danh sách cảnh báo thông báo (Notifications Alert)
     console.log('[Seed] Seeding notifications history...');
     const notificationsData = [
-      // Notification for Phong: Huy liked mountains illustration
+      // Thông báo cho Phong: Huy đã thích tác phẩm phong cảnh núi
       {
         recipientId: aPhong._id,
         actorId: uHuy._id,
@@ -676,7 +676,7 @@ const runSeed = async () => {
         contentPreview: 'Huy Nguyễn đã thích tác phẩm của bạn: "Sự tĩnh lặng của đại ngàn"',
         isRead: true
       },
-      // Notification for Phong: Huy commented on mountains
+      // Thông báo cho Phong: Huy đã bình luận trên tác phẩm núi
       {
         recipientId: aPhong._id,
         actorId: uHuy._id,
@@ -686,7 +686,7 @@ const runSeed = async () => {
         contentPreview: 'Huy Nguyễn đã bình luận về tác phẩm: "Sự tĩnh lặng của đại ngàn"',
         isRead: true
       },
-      // Notification for Vy Anime: Vy Vy followed
+      // Thông báo cho Vy Anime: Vy Vy đã theo dõi
       {
         recipientId: aVy._id,
         actorId: uVy._id,
@@ -694,7 +694,7 @@ const runSeed = async () => {
         contentPreview: 'Vy Vy đã bắt đầu theo dõi bạn.',
         isRead: false
       },
-      // Notification for Vy Anime: Vy Vy requested commission
+      // Thông báo cho Vy Anime: Vy Vy đã yêu cầu commission
       {
         recipientId: aVy._id,
         actorId: uVy._id,
@@ -704,7 +704,7 @@ const runSeed = async () => {
         contentPreview: 'Bạn nhận được một yêu cầu vẽ mới từ Vy Vy.',
         isRead: false
       },
-      // Notification for Minh Cyber: Huy requested commission
+      // Thông báo cho Minh Cyber: Huy đã yêu cầu commission
       {
         recipientId: aMinh._id,
         actorId: uHuy._id,

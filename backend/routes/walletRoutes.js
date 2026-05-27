@@ -18,7 +18,7 @@ router.get('/transactions', protect, getTransactions);
 router.post('/deposit', protect, depositFunds);
 router.post('/withdraw', protect, withdrawFunds);
 
-// Payment Gateway routes
+// Các route cổng thanh toán (Payment Gateway)
 router.post('/deposit/momo', protect, initiateMomoPayment);
 router.post('/deposit/momo/mock-confirm', protect, mockConfirmMomoPayment);
 router.post('/deposit/bank/confirm', protect, confirmBankDeposit);

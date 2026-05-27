@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react';
-import { useRegisterMutation } from '../store/authApi';
+import { GoogleLogin } from '@react-oauth/google';
+import { useRegisterMutation, useGoogleLoginMutation } from '../store/authApi';
 import { setCredentials } from '../store/authSlice';
 import type { RootState } from '../store';
 import { translations } from '../utils/translation';
@@ -20,6 +21,7 @@ export const Register = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   const [registerUser, { isLoading }] = useRegisterMutation();
+  const [googleLoginMutation] = useGoogleLoginMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +46,27 @@ export const Register = () => {
       setErrorMsg(err.data?.message || 'Đăng ký không thành công, vui lòng thử lại!');
     }
   };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setErrorMsg('');
+    if (!credentialResponse.credential) {
+      setErrorMsg('Không nhận được thông tin xác thực từ Google!');
+      return;
+    }
+    try {
+      const response = await googleLoginMutation({ credential: credentialResponse.credential }).unwrap();
+      dispatch(setCredentials({ user: response, token: response.token }));
+      navigate('/');
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.data?.message || 'Đăng ký Google không thành công, vui lòng thử lại!');
+    }
+  };
+
+  const handleGoogleError = () => {
+    setErrorMsg('Xác thực tài khoản Google thất bại!');
+  };
+
 
   return (
     <div
@@ -82,7 +105,7 @@ export const Register = () => {
             {t.register}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Tham gia cộng đồng họa sĩ chuyên nghiệp hàng đầu!
+            Tham gia cộng đồng người dùng chuyên nghiệp hàng đầu!
           </p>
         </div>
 
@@ -186,6 +209,24 @@ export const Register = () => {
             {isLoading ? 'Đang tạo tài khoản...' : t.register}
           </button>
         </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--glass-border)' }}></div>
+          <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em' }}>HOẶC</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--glass-border)' }}></div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', minHeight: '44px' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="filled_blue"
+            size="large"
+            width="360"
+            text="signup_with"
+            shape="pill"
+          />
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
           {t.haveAccount}{' '}

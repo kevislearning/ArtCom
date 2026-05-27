@@ -26,15 +26,15 @@ import { updateUser } from '../store/authSlice';
 export const WalletDashboard = () => {
   const dispatch = useDispatch();
   const { user, language } = useSelector((state: RootState) => state.auth);
-  const t = language === 'en' ? translations.en : translations.vn;
+  const t = translations[language];
 
-  // Payment inputs and states
+  // Các đầu vào và trạng thái thanh toán
   const [depositAmount, setDepositAmount] = useState<number | ''>('');
   const [withdrawAmount, setWithdrawAmount] = useState<number | ''>('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
-  // Payment gateway states
+  // Các trạng thái cổng thanh toán (Payment gateway)
   const [paymentMethod, setPaymentMethod] = useState<'momo' | 'bank'>('momo');
   const [showBankModal, setShowBankModal] = useState(false);
   const [bankQRUrl, setBankQRUrl] = useState('');
@@ -42,8 +42,11 @@ export const WalletDashboard = () => {
   const [isProcessingBank, setIsProcessingBank] = useState(false);
   const [copiedField, setCopiedField] = useState<'account' | 'content' | null>(null);
   const [devMockData, setDevMockData] = useState<{ orderId: string; amount: number } | null>(null);
+  
+  // Ref để ngăn StrictMode của React 18 xác nhận đúp callback MoMo trong chế độ Dev Mode
+  const momoConfirmedRef = React.useRef(false);
 
-  // Queries and mutations
+  // Các câu truy vấn (Queries) và đột biến (Mutations)
   const { data: balanceData } = useGetWalletBalanceQuery(undefined, {
     pollingInterval: 10000,
   });
@@ -57,7 +60,7 @@ export const WalletDashboard = () => {
 
   const currentBalance = balanceData?.walletBalance ?? user?.walletBalance ?? 0;
 
-  // Handle MoMo Sandbox payment return callback from URL query parameters
+  // Xử lý callback trả về của cổng thanh toán MoMo Sandbox từ các tham số truy vấn (query) của URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const resultCode = params.get('resultCode');
@@ -65,6 +68,8 @@ export const WalletDashboard = () => {
     const amountStr = params.get('amount');
 
     if (resultCode === '0' && orderId && amountStr) {
+      if (momoConfirmedRef.current) return;
+      momoConfirmedRef.current = true;
       const amount = Number(amountStr);
       console.log('[MoMo Callback] Success redirect received, confirming payment...', orderId, amount);
       
@@ -72,19 +77,19 @@ export const WalletDashboard = () => {
         try {
           const result = await mockConfirmMomoDeposit({ orderId, amount }).unwrap();
           
-          // Update Redux state
+          // Cập nhật trạng thái Redux
           if (user) {
             dispatch(updateUser({ ...user, walletBalance: result.walletBalance }));
           }
           
-          setSuccessMessage(`Thanh toán thành công! Đã nạp +${formatVND(amount)} vào ví thông qua MoMo.`);
+          setSuccessMessage(t.momoSuccess.replace('{amount}', formatVND(amount)));
           
-          // Clear query parameters from address bar gracefully
+          // Xóa các tham số truy vấn khỏi thanh địa chỉ một cách mượt mà
           window.history.replaceState({}, document.title, window.location.pathname);
           refetch();
         } catch (err: any) {
           console.error(err);
-          setErrorMessage(err.data?.message || 'Có lỗi xảy ra khi xác nhận thanh toán MoMo!');
+          setErrorMessage(err.data?.message || t.momoConfirmError);
         }
       };
 
@@ -92,12 +97,12 @@ export const WalletDashboard = () => {
     } else if (resultCode && resultCode !== '0' && orderId && amountStr) {
       const amount = Number(amountStr);
       setDevMockData({ orderId, amount });
-      const message = params.get('message') || 'Thao tác nạp tiền MoMo đã bị hủy hoặc thất bại.';
-      setErrorMessage(`Lỗi thanh toán MoMo: ${message}`);
+      const message = params.get('message') || (language === 'vn' ? 'Thao tác nạp tiền MoMo đã bị hủy hoặc thất bại.' : 'MoMo payment canceled or failed.');
+      setErrorMessage(`${language === 'vn' ? 'Lỗi thanh toán MoMo' : 'MoMo payment error'}: ${message}`);
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (resultCode && resultCode !== '0') {
-      const message = params.get('message') || 'Thao tác nạp tiền MoMo đã bị hủy hoặc thất bại.';
-      setErrorMessage(`Lỗi thanh toán MoMo: ${message}`);
+      const message = params.get('message') || (language === 'vn' ? 'Thao tác nạp tiền MoMo đã bị hủy hoặc thất bại.' : 'MoMo payment canceled or failed.');
+      setErrorMessage(`${language === 'vn' ? 'Lỗi thanh toán MoMo' : 'MoMo payment error'}: ${message}`);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [window.location.search]);
@@ -108,7 +113,7 @@ export const WalletDashboard = () => {
     setSuccessMessage('');
 
     if (!depositAmount || depositAmount < 100000) {
-      setErrorMessage('Số tiền nạp tối thiểu là 100,000 VND!');
+      setErrorMessage(t.minDepositError);
       return;
     }
 
@@ -117,17 +122,17 @@ export const WalletDashboard = () => {
         console.log('[Deposit] Initiating MoMo Sandbox payment for:', depositAmount);
         const result = await initiateMomoDeposit(depositAmount).unwrap();
         if (result.payUrl) {
-          // Redirect the user directly to the MoMo sandbox payment gateway
+          // Điều hướng người dùng trực tiếp đến cổng thanh toán MoMo sandbox
           window.location.href = result.payUrl;
         } else {
-          setErrorMessage('Không nhận được liên kết thanh toán từ MoMo!');
+          setErrorMessage(t.momoNoLink);
         }
       } catch (err: any) {
         console.error(err);
-        setErrorMessage(err.data?.message || 'Có lỗi xảy ra khi khởi tạo giao dịch MoMo!');
+        setErrorMessage(err.data?.message || t.momoInitError);
       }
     } else {
-      // Bank Transfer (VietQR) flow
+      // Quy trình chuyển khoản ngân hàng (VietQR)
       const bankId = 'MB';
       const accountNo = '099999999999';
       const accountName = 'ART GALLERY COMMUNITY';
@@ -146,24 +151,24 @@ export const WalletDashboard = () => {
     setErrorMessage('');
     setSuccessMessage('');
 
-    // Simulate 2s banking scanner delay
+    // Mô phỏng độ trễ 2 giây của máy quét ngân hàng
     setTimeout(async () => {
       try {
         const amount = Number(depositAmount);
         const result = await confirmBankDeposit({ amount, referenceCode: refCode }).unwrap();
 
-        // Update Redux state
+        // Cập nhật trạng thái Redux
         if (user) {
           dispatch(updateUser({ ...user, walletBalance: result.walletBalance }));
         }
 
-        setSuccessMessage(`Đã nạp thành công +${formatVND(amount)} thông qua chuyển khoản Ngân hàng (VietQR)!`);
+        setSuccessMessage(t.bankSuccess.replace('{amount}', formatVND(amount)));
         setShowBankModal(false);
         setDepositAmount('');
         refetch();
       } catch (err: any) {
         console.error(err);
-        setErrorMessage(err.data?.message || 'Có lỗi xảy ra khi xác nhận giao dịch chuyển khoản!');
+        setErrorMessage(err.data?.message || t.bankConfirmError);
       } finally {
         setIsProcessingBank(false);
       }
@@ -180,18 +185,18 @@ export const WalletDashboard = () => {
         amount: devMockData.amount
       }).unwrap();
 
-      // Update Redux state
+      // Cập nhật trạng thái Redux
       if (user) {
         dispatch(updateUser({ ...user, walletBalance: result.walletBalance }));
       }
 
-      setSuccessMessage(`[Dev Mode] Đã giả lập thanh toán MoMo thành công! Đã nạp +${formatVND(devMockData.amount)} vào ví.`);
+      setSuccessMessage(`[Dev Mode] ${t.momoSuccess.replace('{amount}', formatVND(devMockData.amount))}`);
       setDevMockData(null);
       setDepositAmount('');
       refetch();
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.data?.message || 'Có lỗi xảy ra khi giả lập xác nhận giao dịch MoMo!');
+      setErrorMessage(err.data?.message || t.mockMomoError);
     }
   };
 
@@ -201,7 +206,7 @@ export const WalletDashboard = () => {
     setSuccessMessage('');
 
     if (!withdrawAmount || withdrawAmount < 50000) {
-      setErrorMessage('Số tiền rút tối thiểu là 50,000 VND!');
+      setErrorMessage(t.minWithdrawError);
       return;
     }
 
@@ -213,17 +218,17 @@ export const WalletDashboard = () => {
     try {
       const result = await withdrawFunds(withdrawAmount).unwrap();
       
-      // Update Redux user balance state
+      // Cập nhật trạng thái số dư người dùng trong Redux
       if (user) {
         dispatch(updateUser({ ...user, walletBalance: result.walletBalance }));
       }
 
-      setSuccessMessage(`Đã rút thành công ${formatVND(withdrawAmount)} từ tài khoản giả lập!`);
+      setSuccessMessage(t.withdrawSuccess.replace('{amount}', formatVND(withdrawAmount)));
       setWithdrawAmount('');
       refetch();
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.data?.message || 'Có lỗi xảy ra khi rút tiền!');
+      setErrorMessage(err.data?.message || t.withdrawError);
     }
   };
 
@@ -263,15 +268,15 @@ export const WalletDashboard = () => {
   const getTransactionTypeLabel = (type: string) => {
     switch (type) {
       case 'deposit':
-        return 'Nạp tiền (Deposit)';
+        return t.ledgerDeposit;
       case 'withdraw':
-        return 'Rút tiền (Withdraw)';
+        return t.ledgerWithdraw;
       case 'escrow_hold':
-        return 'Tạm khóa (Escrow Hold)';
+        return t.ledgerEscrowHold;
       case 'escrow_release':
-        return 'Giải ngân (Escrow Release)';
+        return t.ledgerEscrowRelease;
       case 'escrow_refund':
-        return 'Hoàn tiền (Escrow Refund)';
+        return t.ledgerEscrowRefund;
       default:
         return type;
     }
@@ -281,7 +286,7 @@ export const WalletDashboard = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
       <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>{t.wallet}</h1>
 
-      {/* Alert overlays */}
+      {/* Các hộp cảnh báo lớp phủ (Alert overlays) */}
       {(errorMessage || successMessage) && (
         <div
           style={{
@@ -299,7 +304,7 @@ export const WalletDashboard = () => {
         </div>
       )}
 
-      {/* Developer Sandbox Mock Success Override Panel */}
+      {/* Bảng ghi đè thành công mô phỏng của Sandbox dành cho nhà phát triển (Dev Mode) */}
       {devMockData && (
         <div
           className="glass-panel animate-fade-in"
@@ -316,8 +321,7 @@ export const WalletDashboard = () => {
           }}
         >
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            🔧 <strong>Chế độ nhà phát triển (Localhost Dev Mode)</strong>: Bạn vừa quay về từ MoMo Sandbox của mã đơn hàng <code>{devMockData.orderId}</code>. <br />
-            Để tiếp tục chạy thử luồng nạp tiền mà không cần quét mã thật, bạn có thể click nút dưới đây để giả lập thanh toán thành công.
+            {t.devModeDesc.replace('{orderId}', devMockData.orderId)}
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
@@ -325,20 +329,20 @@ export const WalletDashboard = () => {
               className="btn btn-primary"
               style={{ padding: '8px 20px', fontSize: '12px', height: '36px', borderRadius: '18px' }}
             >
-              Giả lập nạp thành công {formatVND(devMockData.amount)}
+              {t.devModeBtn.replace('{amount}', formatVND(devMockData.amount))}
             </button>
             <button
               onClick={() => setDevMockData(null)}
               className="btn btn-secondary"
               style={{ padding: '8px 20px', fontSize: '12px', height: '36px', borderRadius: '18px' }}
             >
-              Bỏ qua
+              {t.devModeIgnore}
             </button>
           </div>
         </div>
       )}
 
-      {/* Top dashboard summary and deposit panel */}
+      {/* Tóm tắt bảng điều khiển trên cùng và bảng nạp tiền */}
       <div
         style={{
           display: 'grid',
@@ -348,7 +352,7 @@ export const WalletDashboard = () => {
         }}
         className="wallet-grid"
       >
-        {/* Visual Balance Card */}
+        {/* Thẻ hiển thị số dư trực quan (Visual Balance Card) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -380,14 +384,9 @@ export const WalletDashboard = () => {
           <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', filter: 'drop-shadow(0 0 10px var(--primary-glow))' }}>
             {formatVND(currentBalance)}
           </h2>
-
-          {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
-            <CheckCircle size={14} style={{ color: 'var(--accent)' }} />
-            <span>Ví giao dịch giả lập an toàn</span>
-          </div> */}
         </div>
 
-        {/* Deposit Panel */}
+        {/* Bảng nạp tiền (Deposit Panel) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -402,7 +401,7 @@ export const WalletDashboard = () => {
             {t.deposit}
           </h3>
 
-          {/* Payment Method Selector */}
+          {/* Bộ chọn phương thức thanh toán (Payment Method) */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <button
               type="button"
@@ -421,7 +420,7 @@ export const WalletDashboard = () => {
                 cursor: 'pointer',
               }}
             >
-              Ví MoMo
+              {t.walletMomo}
             </button>
             <button
               type="button"
@@ -440,7 +439,7 @@ export const WalletDashboard = () => {
                 cursor: 'pointer',
               }}
             >
-              VietQR Bank
+              {t.walletBank}
             </button>
           </div>
 
@@ -450,18 +449,18 @@ export const WalletDashboard = () => {
               className="glass-input"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value ? Number(e.target.value) : '')}
-              placeholder={paymentMethod === 'momo' ? 'Nhập tiền nạp MoMo (đ)...' : 'Nhập tiền chuyển khoản (đ)...'}
+              placeholder={paymentMethod === 'momo' ? t.momoPlaceholder : t.bankPlaceholder}
               min={100000}
               step={10000}
               required
             />
             <button type="submit" className="btn btn-accent" style={{ height: '40px' }} disabled={isInitiatingMomo}>
-              {isInitiatingMomo ? 'Đang khởi tạo...' : paymentMethod === 'momo' ? 'Nạp qua Ví MoMo' : 'Tạo mã VietQR'}
+              {isInitiatingMomo ? t.initiating : paymentMethod === 'momo' ? t.momoBtn : t.bankBtn}
             </button>
           </form>
         </div>
 
-        {/* Withdrawal Panel */}
+        {/* Bảng rút tiền (Withdrawal Panel) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -493,13 +492,13 @@ export const WalletDashboard = () => {
               style={{ height: '40px', borderColor: 'var(--danger)', color: 'var(--danger)' }}
               disabled={isWithdrawing}
             >
-              {isWithdrawing ? 'Đang thực hiện...' : 'Rút tiền ngay'}
+              {isWithdrawing ? t.withdrawing : t.withdrawBtn}
             </button>
           </form>
         </div>
       </div>
 
-      {/* Ledger lists section */}
+      {/* Phần danh sách sổ cái giao dịch (Ledger lists) */}
       <div
         className="glass-panel animate-fade-in"
         style={{
@@ -572,7 +571,7 @@ export const WalletDashboard = () => {
                         {tx.description}
                         {tx.referenceId && (
                           <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            Mã Commission: #{typeof tx.referenceId === 'object' && tx.referenceId && '_id' in tx.referenceId ? tx.referenceId._id : String(tx.referenceId)}
+                            {t.commissionIdLabel.replace('{id}', typeof tx.referenceId === 'object' && tx.referenceId && '_id' in tx.referenceId ? tx.referenceId._id : String(tx.referenceId))}
                           </span>
                         )}
                       </td>
@@ -596,7 +595,7 @@ export const WalletDashboard = () => {
         )}
       </div>
 
-      {/* VietQR Bank Transfer Modal */}
+      {/* Modal chuyển khoản ngân hàng VietQR */}
       {showBankModal && (
         <div
           style={{
@@ -633,7 +632,7 @@ export const WalletDashboard = () => {
               gap: '24px',
             }}
           >
-            {/* Close button */}
+            {/* Nút đóng */}
             <button
               onClick={() => setShowBankModal(false)}
               style={{
@@ -653,14 +652,14 @@ export const WalletDashboard = () => {
             <div style={{ textAlign: 'center' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                 <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />
-                Chuyển khoản bằng mã VietQR
+                {t.bankTitle}
               </h2>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Quét mã bằng ứng dụng ngân hàng của bạn để tự điền thông tin chuyển khoản nhanh chóng.
+                {t.bankDesc}
               </p>
             </div>
 
-            {/* QR Code Container */}
+            {/* Khung chứa mã QR Code */}
             <div
               style={{
                 backgroundColor: '#ffffff',
@@ -682,7 +681,7 @@ export const WalletDashboard = () => {
               />
             </div>
 
-            {/* Bank Details list */}
+            {/* Danh sách chi tiết thông tin ngân hàng */}
             <div
               style={{
                 width: '100%',
@@ -697,12 +696,12 @@ export const WalletDashboard = () => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.03)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Ngân hàng thụ hưởng</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t.bankRecipient}</span>
                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>MBBank (Ngân hàng Quân Đội)</span>
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.03)', paddingBottom: '8px', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t.bankAccountNo}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>099999999999</span>
                   <button
@@ -714,23 +713,23 @@ export const WalletDashboard = () => {
                     style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px', padding: 0 }}
                   >
                     <Copy size={12} />
-                    {copiedField === 'account' ? 'Đã sao chép' : 'Sao chép'}
+                    {copiedField === 'account' ? t.bankCopied : t.bankCopy}
                   </button>
                 </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.03)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Tên chủ tài khoản</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t.bankAccountName}</span>
                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>ART GALLERY COMMUNITY</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.03)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Số tiền chuyển khoản</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t.bankAmount}</span>
                 <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '15px' }}>{formatVND(Number(depositAmount))}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Nội dung chuyển khoản</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t.bankContent}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)', backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(99, 102, 241, 0.2)', fontSize: '12px', fontFamily: 'monospace' }}>
                     {refCode}
@@ -744,17 +743,17 @@ export const WalletDashboard = () => {
                     style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px', padding: 0 }}
                   >
                     <Copy size={12} />
-                    {copiedField === 'content' ? 'Đã sao chép' : 'Sao chép'}
+                    {copiedField === 'content' ? t.bankCopied : t.bankCopy}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Note & Action buttons */}
+            {/* Các nút ghi chú & hành động */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', gap: '6px', alignItems: 'flex-start', lineHeight: '1.5' }}>
                 <CheckCircle size={14} style={{ color: 'var(--success)', marginTop: '2px', flexShrink: 0 }} />
-                <span>Số dư sẽ được cộng tự động sau khi hệ thống nhận được giao dịch chuyển khoản thành công từ phía ngân hàng liên kết.</span>
+                <span>{t.bankNote}</span>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
@@ -764,7 +763,7 @@ export const WalletDashboard = () => {
                   style={{ flex: 1 }}
                   disabled={isProcessingBank}
                 >
-                  Đóng lại
+                  {t.bankClose}
                 </button>
                 
                 <button
@@ -776,12 +775,12 @@ export const WalletDashboard = () => {
                   {isProcessingBank ? (
                     <>
                       <div className="spinner" style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                      Đang đối soát giao dịch...
+                      {t.bankVerifying}
                     </>
                   ) : (
                     <>
                       <CheckCircle size={16} />
-                      Tôi đã chuyển khoản
+                      {t.bankVerify}
                     </>
                   )}
                 </button>

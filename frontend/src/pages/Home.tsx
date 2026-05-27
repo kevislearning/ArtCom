@@ -1,12 +1,10 @@
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Trophy, Clock, ChevronRight, Users } from 'lucide-react';
+import { Sparkles, Trophy, Clock, ChevronRight } from 'lucide-react';
 import type { RootState } from '../store';
 import { translations } from '../utils/translation';
 import { useGetIllustrationsQuery, useGetTrendingTagsQuery } from '../store/illustrationApi';
-import { useGetRecommendedArtistsQuery } from '../store/authApi';
 import { ArtworkCard } from '../components/ArtworkCard';
-import { getImageUrl } from '../utils/url';
 
 
 export const Home = () => {
@@ -14,7 +12,7 @@ export const Home = () => {
   const { language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: popularArtworks = [], isLoading: loadingPopular } = useGetIllustrationsQuery({
     sort: 'popular',
   });
@@ -24,7 +22,6 @@ export const Home = () => {
   });
 
   const { data: trendingTags = [] } = useGetTrendingTagsQuery();
-  const { data: recommendedArtists = [] } = useGetRecommendedArtistsQuery();
 
   const handleTagClick = (tagName: string) => {
     navigate(`/explore?tag=${encodeURIComponent(tagName)}`);
@@ -34,7 +31,7 @@ export const Home = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', width: '100%' }}>
-      {/* 1. Hero Recommendation Section */}
+      {/* 1. Phần đề xuất nổi bật (Hero Recommendation) */}
       {trendingRecommendation && (
         <div
           className="glass-panel animate-fade-in"
@@ -49,7 +46,7 @@ export const Home = () => {
             boxShadow: 'var(--card-shadow)',
           }}
         >
-          {/* Main visual display cover */}
+          {/* Ảnh bìa hiển thị trực quan chính */}
           <div
             style={{
               position: 'absolute',
@@ -112,101 +109,9 @@ export const Home = () => {
         </div>
       )}
 
-      {/* Recommended Artists Section */}
-      {recommendedArtists.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Users size={22} style={{ color: 'var(--primary)' }} />
-            Họa sĩ đề cử
-          </h2>
 
-          <div
-            style={{
-              display: 'flex',
-              gap: '20px',
-              overflowX: 'auto',
-              paddingBottom: '8px',
-              scrollbarWidth: 'none',
-            }}
-            className="hide-scrollbar"
-          >
-            {recommendedArtists.map((artist) => (
-              <div
-                key={artist._id}
-                onClick={() => navigate(`/portfolio/${artist._id}`)}
-                className="glass-panel"
-                style={{
-                  minWidth: '220px',
-                  maxWidth: '220px',
-                  borderRadius: 'var(--border-radius-md)',
-                  padding: '24px 16px',
-                  textAlign: 'center',
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '12px',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--card-shadow)',
-                  transition: 'all var(--transition-fast)',
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'var(--glass-border)';
-                }}
-              >
-                <img
-                  src={getImageUrl(artist.avatarUrl) || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + artist.username}
-                  alt={artist.nickname}
-                  style={{
-                    width: '72px',
-                    height: '72px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid var(--glass-border)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  }}
-                />
-                
-                <div style={{ width: '100%' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                    {artist.nickname}
-                  </h4>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '4px 0 0 0' }}>
-                    @{artist.username}
-                  </p>
-                </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    fontSize: '11px',
-                    color: 'var(--text-secondary)',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    padding: '4px 12px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)',
-                    fontWeight: 700,
-                  }}
-                >
-                  <span>{artist.totalLikes || 0} Thích</span>
-                  <span style={{ color: 'var(--glass-border)' }}>|</span>
-                  <span>{artist.totalViews || 0} Xem</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 2. Tag Carousel */}
+      {/* 2. Băng chuyền hiển thị thẻ (Tag Carousel) */}
       {trendingTags.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -249,7 +154,7 @@ export const Home = () => {
         </div>
       )}
 
-      {/* 3. Popular/Ranking Grid */}
+      {/* 3. Lưới hiển thị tác phẩm phổ biến/xếp hạng */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -288,7 +193,7 @@ export const Home = () => {
         )}
       </div>
 
-      {/* 4. Newest Grid */}
+      {/* 4. Lưới hiển thị các tác phẩm mới nhất */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>

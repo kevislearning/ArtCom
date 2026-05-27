@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
 let io = null;
-const userSockets = new Map(); // Maps userId -> Array of socket.id
+const userSockets = new Map(); // Bản đồ maps userId -> Mảng các socket.id
 
 export const initializeSocket = (server) => {
   io = new Server(server, {
@@ -16,7 +16,7 @@ export const initializeSocket = (server) => {
   io.on('connection', (socket) => {
     console.log(`[Socket] New connection established: ${socket.id}`);
 
-    // Handle user authentication/identification on connect
+    // Xử lý authenticate/identify người dùng khi connect
     socket.on('authenticate', (token) => {
       try {
         if (!token) return;
@@ -31,17 +31,17 @@ export const initializeSocket = (server) => {
         userSockets.get(userId).push(socket.id);
         console.log(`[Socket] Authenticated User: ${userId} on Socket: ${socket.id}`);
         
-        // Join their own room
+        // Join vào room riêng của họ
         socket.join(userId);
       } catch (err) {
         console.error('[Socket Auth Error]', err.message);
       }
     });
 
-    // Handle standard rooms or direct messaging triggers if any
+    // Xử lý các room tiêu chuẩn hoặc các trigger gửi tin nhắn trực tiếp nếu có
     socket.on('join_chat', (otherUserId) => {
       if (socket.userId) {
-        // Room specifically for these two users
+        // Room dành riêng cho hai người dùng này
         const roomName = [socket.userId, otherUserId].sort().join('-');
         socket.join(roomName);
         console.log(`[Socket] Socket ${socket.id} joined chat room: ${roomName}`);
@@ -82,7 +82,7 @@ export const getIO = () => {
 };
 
 /**
- * Send an event directly to a specific user's connected socket sessions
+ * Gửi một event trực tiếp đến các socket session đang kết nối của một người dùng cụ thể
  */
 export const sendToUser = (userId, event, data) => {
   if (io && userId) {

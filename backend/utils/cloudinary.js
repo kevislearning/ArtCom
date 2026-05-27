@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 
-// Check if Cloudinary credentials are set in environment variables
+// Kiểm tra xem credentials Cloudinary đã được thiết lập trong biến môi trường chưa
 const hasCloudinary = 
   process.env.CLOUDINARY_CLOUD_NAME && 
   process.env.CLOUDINARY_API_KEY && 
@@ -19,10 +19,10 @@ if (hasCloudinary) {
 }
 
 /**
- * Uploads a file (saved by Multer diskStorage) to Cloudinary if configured.
- * If Cloudinary is not configured or fails, falls back to serving it locally.
- * In both cases, returns the URL path to save in the Database.
- * If uploaded to Cloudinary, deletes the local file to keep the disk clean.
+ * Tải một file (được lưu bởi Multer diskStorage) lên Cloudinary nếu được cấu hình.
+ * Nếu Cloudinary chưa được cấu hình hoặc thất bại, fallback về việc cung cấp file cục bộ.
+ * Trong cả hai trường hợp, trả về đường dẫn URL để lưu vào cơ sở dữ liệu.
+ * Nếu tải lên Cloudinary thành công, xóa file cục bộ để giữ cho đĩa sạch.
  */
 export const uploadFileToCloudinary = async (file) => {
   if (!file) return null;
@@ -36,7 +36,7 @@ export const uploadFileToCloudinary = async (file) => {
       
       console.log(`[Cloudinary] Upload successful! URL: ${result.secure_url}`);
 
-      // Asynchronously delete local temporary file
+      // Xóa file tạm cục bộ một cách bất đồng bộ
       fs.unlink(file.path, (err) => {
         if (err) {
           console.error('[Cloudinary] Failed to delete local temp file:', file.path, err.message);
@@ -52,13 +52,13 @@ export const uploadFileToCloudinary = async (file) => {
     }
   }
 
-  // Fallback to local storage path
+  // Fallback về đường dẫn lưu trữ cục bộ
   console.log(`[Cloudinary Fallback] Using local storage path for file: /uploads/${file.filename}`);
   return `/uploads/${file.filename}`;
 };
 
 /**
- * Helper to upload multiple files
+ * Helper để tải lên nhiều files
  */
 export const uploadMultipleToCloudinary = async (files) => {
   if (!files || files.length === 0) return [];

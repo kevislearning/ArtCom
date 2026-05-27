@@ -4,7 +4,7 @@ import Commission from '../models/Commission.js';
 
 export const walletService = {
   /**
-   * Deposit simulated VND to a user's wallet
+   * Nạp tiền VND mô phỏng vào ví của người dùng
    */
   async deposit(userId, amount, description = 'Simulated Deposit') {
     if (amount <= 0) {
@@ -30,7 +30,7 @@ export const walletService = {
   },
 
   /**
-   * Withdraw simulated VND from a user's wallet
+   * Rút tiền VND mô phỏng từ ví của người dùng
    */
   async withdraw(userId, amount, description = 'Simulated Withdrawal') {
     if (amount <= 0) {
@@ -60,7 +60,7 @@ export const walletService = {
   },
 
   /**
-   * Hold funds in escrow upon starting a commission request
+   * Giữ tiền trong escrow khi bắt đầu một yêu cầu commission
    */
   async holdInEscrow(commissionId) {
     const commission = await Commission.findById(commissionId);
@@ -81,15 +81,15 @@ export const walletService = {
       throw new Error('Insufficient wallet balance to start this commission');
     }
 
-    // Deduct from client's balance
+    // Khấu trừ từ số dư của client
     client.walletBalance -= commission.price;
     await client.save();
 
-    // Update commission payment status
+    // Cập nhật trạng thái thanh toán commission
     commission.paymentStatus = 'escrow';
     await commission.save();
 
-    // Create escrow hold transaction
+    // Tạo giao dịch giữ tiền escrow (escrow hold)
     const transaction = await WalletTransaction.create({
       userId: commission.clientId,
       amount: -commission.price,
@@ -102,7 +102,7 @@ export const walletService = {
   },
 
   /**
-   * Release escrowed funds to the artist upon completion of the commission
+   * Giải phóng tiền trong escrow cho artist sau khi hoàn thành commission
    */
   async releaseEscrow(commissionId) {
     const commission = await Commission.findById(commissionId);
@@ -119,29 +119,32 @@ export const walletService = {
       throw new Error('Artist not found');
     }
 
-    // Credit the artist
-    artist.walletBalance += commission.price;
+    // Cộng tiền cho artist với số tiền thực nhận (sau khi trừ 10% phí nền tảng)
+    const feeAmount = Math.round(commission.price * 0.1);
+    const netAmount = commission.price - feeAmount;
+
+    artist.walletBalance += netAmount;
     await artist.save();
 
-    // Update commission status
+    // Cập nhật trạng thái commission
     commission.paymentStatus = 'paid_to_artist';
     commission.status = 'completed';
     await commission.save();
 
-    // Create escrow release transaction for artist
+    // Tạo giao dịch giải phóng tiền escrow (escrow release) cho artist với số tiền thực nhận và mô tả chi tiết
     const transaction = await WalletTransaction.create({
       userId: commission.artistId,
-      amount: commission.price,
+      amount: netAmount,
       type: 'escrow_release',
       referenceId: commissionId,
-      description: `Escrow payout released for commission: ${commission.title}`,
+      description: `Nhận tiền đặt vẽ tranh (Đã khấu trừ 10% phí nền tảng: -${feeAmount.toLocaleString('vi-VN')} VND) cho commission: ${commission.title}`,
     });
 
     return { artist, commission, transaction };
   },
 
   /**
-   * Refund escrowed funds back to the client if commission is rejected, canceled, or expired
+   * Hoàn lại tiền trong escrow cho client nếu commission bị từ chối, bị hủy hoặc hết hạn
    */
   async refundEscrow(commissionId) {
     const commission = await Commission.findById(commissionId);
@@ -158,15 +161,15 @@ export const walletService = {
       throw new Error('Client not found');
     }
 
-    // Refund the client
+    // Hoàn tiền cho client
     client.walletBalance += commission.price;
     await client.save();
 
-    // Update commission status
+    // Cập nhật trạng thái commission
     commission.paymentStatus = 'refunded';
     await commission.save();
 
-    // Create escrow refund transaction
+    // Tạo giao dịch hoàn tiền escrow (escrow refund)
     const transaction = await WalletTransaction.create({
       userId: commission.clientId,
       amount: commission.price,

@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
     },
     walletBalance: {
       type: Number,
-      default: 0, // VND currency
+      default: 0, // Tiền tệ VND
     },
     socialLinks: {
       twitter: { type: String, default: '' },

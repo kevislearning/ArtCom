@@ -67,7 +67,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         overflow: 'hidden',
       }}
     >
-      {/* Background artwork image */}
+      {/* Hình ảnh artwork nền */}
       <img
         src={imageUrl}
         alt={artwork.title}
@@ -82,7 +82,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
       />
 
-      {/* Floating tag/private flag */}
+      {/* Nhãn tag floating/cờ private */}
       {artwork.visibility === 'private' && (
         <span
           style={{
@@ -102,7 +102,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         </span>
       )}
 
-      {/* Floating Rank Badge */}
+      {/* Huy hiệu xếp hạng nổi (Floating Rank Badge) */}
       {rank !== undefined && (
         <span
           style={{
@@ -111,11 +111,11 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
             left: '12px',
             background:
               rank === 1
-                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' // Gold
+                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' // Vàng (Gold)
                 : rank === 2
-                ? 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)' // Silver
+                ? 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)' // Bạc (Silver)
                 : rank === 3
-                ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' // Bronze
+                ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' // Đồng (Bronze)
                 : 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--glass-border) 100%)',
             color: '#ffffff',
             fontSize: '12px',
@@ -131,7 +131,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         </span>
       )}
 
-      {/* Hover visual details tray */}
+      {/* Khay thông tin chi tiết hiển thị khi hover */}
       <div
         className="artwork-overlay"
         style={{
@@ -164,7 +164,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         </h3>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Artist details */}
+          {/* Chi tiết artist */}
           {artist && (
             <div
               onClick={(e) => {
@@ -190,7 +190,7 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
             </div>
           )}
 
-          {/* Stats & Actions */}
+          {/* Thống kê & Hành động */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 10 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)' }}>
               <Eye size={14} />

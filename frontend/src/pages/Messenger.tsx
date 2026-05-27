@@ -21,7 +21,7 @@ export const Messenger = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // Selected chat partner id
+  // ID của đối tác chat được chọn
   const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -31,7 +31,7 @@ export const Messenger = () => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
 
-  // Sync state from query ?userId=
+  // Đồng bộ hóa state từ tham số truy vấn (query) ?userId=
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const userIdQuery = params.get('userId');
@@ -40,7 +40,7 @@ export const Messenger = () => {
     }
   }, [location]);
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: conversations = [], refetch: refetchConvos } = useGetConversationsQuery(
     undefined,
     { skip: !user }
@@ -57,27 +57,35 @@ export const Messenger = () => {
 
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
-  // Auto-refetch conversations list when page is opened
+  // Tự động refetch danh sách các cuộc trò chuyện khi trang được mở
   useEffect(() => {
     if (user && location.pathname === '/messenger') {
       refetchConvos();
     }
   }, [location.pathname, user]);
 
+  // Refetch các cuộc trò chuyện khi đối tác đang chat hoặc tin nhắn thay đổi để xóa huy hiệu chưa đọc
+  useEffect(() => {
+    if (user && activePartnerId) {
+      refetchConvos();
+    }
+  }, [activePartnerId, messages, user]);
 
 
-  // Socket triggers for real-time messaging
+
+
+  // Các socket trigger cho nhắn tin thời gian thực
   useEffect(() => {
     const currentSocket = socket;
     if (!currentSocket) return;
 
     if (activePartnerId) {
-      // Join room specifically for the active chat
+      // Join vào room dành riêng cho cuộc trò chuyện đang hoạt động
       currentSocket.emit('join_chat', activePartnerId);
     }
 
     const handleNewMessage = (msg: Message) => {
-      // If the incoming message is from the active partner, refetch active log
+      // Nếu tin nhắn đến là từ đối tác đang hoạt động, refetch log tin nhắn hoạt động
       if (
         activePartnerId &&
         (msg.senderId._id === activePartnerId || msg.receiverId._id === activePartnerId)
@@ -103,7 +111,7 @@ export const Messenger = () => {
   }, [activePartnerId, socket]);
 
 
-  // Scroll to bottom on new message
+  // Cuộn xuống dưới cùng khi có tin nhắn mới
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -116,13 +124,13 @@ export const Messenger = () => {
     const currentSocket = socket;
     if (!currentSocket || !activePartnerId) return;
 
-    // Trigger typing socket event
+    // Kích hoạt socket event báo đang nhập (typing)
     if (!isTyping) {
       setIsTyping(true);
       currentSocket.emit('typing_status', { receiverId: activePartnerId, isTyping: true });
     }
 
-    // Debounce typing status cleanup
+    // Trì hoãn dọn dẹp trạng thái đang nhập (typing)
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
     typingTimeoutRef.current = setTimeout(() => {
@@ -137,7 +145,7 @@ export const Messenger = () => {
 
     try {
       if (socket) {
-        // Emit typing status: false immediately
+        // Phát (Emit) trạng thái đang nhập: false ngay lập tức
         socket.emit('typing_status', { receiverId: activePartnerId, isTyping: false });
         setIsTyping(false);
       }
@@ -168,7 +176,7 @@ export const Messenger = () => {
         backgroundColor: 'var(--bg-secondary)',
       }}
     >
-      {/* 1. Left Column: Active conversations listing */}
+      {/* 1. Cột trái: Danh sách các cuộc trò chuyện đang hoạt động */}
       <div
         style={{
           borderRight: '1px solid var(--glass-border)',
@@ -268,7 +276,7 @@ export const Messenger = () => {
         </div>
       </div>
 
-      {/* 2. Right Column: Active chat room */}
+      {/* 2. Cột phải: Phòng chat đang hoạt động */}
       <div
         style={{
           display: 'flex',
@@ -280,7 +288,7 @@ export const Messenger = () => {
       >
         {activePartnerId && partnerProfile ? (
           <>
-            {/* Header: Partner details */}
+            {/* Header: Chi tiết đối tác */}
             <div
               style={{
                 display: 'flex',
@@ -312,7 +320,7 @@ export const Messenger = () => {
               </div>
             </div>
 
-            {/* Messaging Streams logs */}
+            {/* Logs dòng chảy tin nhắn (Messaging Streams) */}
             <div
               ref={messagesContainerRef}
               style={{
@@ -367,7 +375,7 @@ export const Messenger = () => {
                 );
               })}
 
-              {/* Partner typing indicator status */}
+              {/* Trạng thái chỉ báo đang nhập (typing) của đối tác */}
               {partnerIsTyping && (
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div
@@ -389,7 +397,7 @@ export const Messenger = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input typing text area footer */}
+            {/* Chân trang vùng nhập văn bản nhắn tin */}
             <form
               onSubmit={handleSend}
               style={{
@@ -422,7 +430,7 @@ export const Messenger = () => {
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--text-muted)' }}>
             <MessageSquare size={48} style={{ color: 'var(--glass-border)' }} />
-            <p style={{ fontSize: '15px' }}>Chọn một họa sĩ hoặc khách hàng để bắt đầu cuộc trò chuyện.</p>
+            <p style={{ fontSize: '15px' }}>Chọn một người dùng hoặc đối tác để bắt đầu cuộc trò chuyện.</p>
           </div>
         )}
       </div>

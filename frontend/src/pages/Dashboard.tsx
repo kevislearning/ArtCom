@@ -29,7 +29,7 @@ export const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: profile } = useGetPublicProfileQuery(user?._id || '', {
     skip: !user?._id,
   });
@@ -103,7 +103,7 @@ export const Dashboard = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* Page Header */}
+      {/* Header của trang */}
       <div>
         <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <LayoutDashboard size={28} style={{ color: 'var(--primary)' }} />
@@ -116,7 +116,7 @@ export const Dashboard = () => {
         </p>
       </div>
 
-      {/* Alert overlays */}
+      {/* Các hộp cảnh báo overlay */}
       {(errorMessage || successMessage) && (
         <div
           style={{
@@ -134,7 +134,7 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Statistics Analytics Grid */}
+      {/* Lưới phân tích số liệu thống kê (Statistics Analytics Grid) */}
       <div
         style={{
           display: 'grid',
@@ -143,7 +143,7 @@ export const Dashboard = () => {
         }}
         className="wallet-grid"
       >
-        {/* Card 1: Total Works */}
+        {/* Thẻ 1: Tổng số tác phẩm (Total Works) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -180,7 +180,7 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* Card 2: Total Views */}
+        {/* Thẻ 2: Tổng số lượt xem (Total Views) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -217,7 +217,7 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* Card 3: Total Likes */}
+        {/* Thẻ 3: Tổng số lượt thích (Total Likes) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -254,7 +254,7 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* Card 4: Total Bookmarks */}
+        {/* Thẻ 4: Tổng số lượt đánh dấu (Total Bookmarks) */}
         <div
           className="glass-panel animate-fade-in"
           style={{
@@ -292,7 +292,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Artworks Management List */}
+      {/* Danh sách quản lý tác phẩm (Artworks Management) */}
       <div
         className="glass-panel animate-fade-in"
         style={{
@@ -339,7 +339,7 @@ export const Dashboard = () => {
                     onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
                     onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
-                    {/* Thumbnail & Title */}
+                    {/* Ảnh thu nhỏ (Thumbnail) & Tiêu đề */}
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', backgroundColor: '#000000', flexShrink: 0 }}>
@@ -355,7 +355,7 @@ export const Dashboard = () => {
                       </div>
                     </td>
 
-                    {/* Date */}
+                    {/* Ngày tháng */}
                     <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Calendar size={13} />
@@ -363,7 +363,7 @@ export const Dashboard = () => {
                       </span>
                     </td>
 
-                    {/* Visibility Dropdown edit */}
+                    {/* Dropdown chỉnh sửa khả năng hiển thị (Visibility) */}
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {getVisibilityIcon(art.visibility)}
@@ -389,12 +389,12 @@ export const Dashboard = () => {
                       </div>
                     </td>
 
-                    {/* Individual interactions */}
+                    {/* Tương tác cá nhân */}
                     <td style={{ padding: '16px', textAlign: 'center', fontWeight: 600 }}>{art.viewsCount || 0}</td>
                     <td style={{ padding: '16px', textAlign: 'center', fontWeight: 600, color: 'var(--danger)' }}>{art.likesCount || 0}</td>
                     <td style={{ padding: '16px', textAlign: 'center', fontWeight: 600, color: 'var(--warning)' }}>{art.bookmarksCount || 0}</td>
 
-                    {/* Actions */}
+                    {/* Hành động */}
                     <td style={{ padding: '16px', textAlign: 'right' }}>
                       <button
                         onClick={() => handleDelete(art._id, art.title)}

@@ -10,10 +10,10 @@ export const Rankings = () => {
   const { language } = useSelector((state: RootState) => state.auth);
   const t = language === 'en' ? translations.en : translations.vn;
 
-  // State for ranking period
+  // Trạng thái chu kỳ xếp hạng (ranking period)
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('week');
 
-  // Query popular illustrations by time period
+  // Truy vấn các illustration phổ biến theo chu kỳ thời gian
   const { data: artworks = [], isLoading } = useGetIllustrationsQuery({
     sort: 'popular',
     period: period,
@@ -28,7 +28,7 @@ export const Rankings = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* Header section */}
+      {/* Phân khúc tiêu đề (Header) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -42,7 +42,7 @@ export const Rankings = () => {
           </p>
         </div>
 
-        {/* Time period filter tabs */}
+        {/* Các tab bộ lọc chu kỳ thời gian */}
         <div
           className="glass-panel"
           style={{
@@ -79,7 +79,7 @@ export const Rankings = () => {
         </div>
       </div>
 
-      {/* Grid of Results */}
+      {/* Lưới hiển thị kết quả */}
       {isLoading ? (
         <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
       ) : artworks.length === 0 ? (

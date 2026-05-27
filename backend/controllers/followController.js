@@ -24,7 +24,7 @@ export const toggleFollow = async (req, res) => {
     } else {
       await Follow.create({ followerId, followingId: targetUserId });
 
-      // Trigger notification
+      // Kích hoạt notification
       await notificationService.createNotification({
         recipientId: targetUserId,
         actorId: followerId,

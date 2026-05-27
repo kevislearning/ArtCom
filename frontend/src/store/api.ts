@@ -7,7 +7,7 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
-      // If we need custom tokens in headers, retrieve from localStorage (fallback)
+      // Nếu cần chèn token tùy chỉnh vào headers, lấy từ localStorage (fallback)
       const token = localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);

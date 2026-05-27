@@ -30,18 +30,18 @@ export const Commissions = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // Tab state: 'requested' (Client view) vs 'received' (Artist view)
+  // Trạng thái Tab: 'requested' (Góc nhìn của Client) vs 'received' (Góc nhìn của Artist)
   const [commTab, setCommTab] = useState<'requested' | 'received'>(
     user?.requestTerms?.hasTerms ? 'received' : 'requested'
   );
 
-  // Delivery Modal State
+  // State của Modal bàn giao tác phẩm (Delivery)
   const [deliveryTargetId, setDeliveryTargetId] = useState<string | null>(null);
   const [deliveryFiles, setDeliveryFiles] = useState<FileList | null>(null);
   const [deliveryPreviews, setDeliveryPreviews] = useState<string[]>([]);
   const [deliveryError, setDeliveryError] = useState('');
 
-  // Request Terms Modal State
+  // State của Modal cấu hình điều khoản yêu cầu (Request Terms)
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsTitle, setTermsTitle] = useState(user?.requestTerms?.title || '');
   const [termsDetails, setTermsDetails] = useState(user?.requestTerms?.details || '');
@@ -63,7 +63,7 @@ export const Commissions = () => {
     }
   }, [user]);
 
-  // Queries
+  // Các câu truy vấn (Queries)
   const { data: requestedCommissions = [], refetch: refetchClient } = useGetClientCommissionsQuery(
     undefined,
     { skip: !user }
@@ -74,7 +74,7 @@ export const Commissions = () => {
     { skip: !user }
   );
 
-  // Mutations
+  // Các đột biến thay đổi dữ liệu (Mutations)
   const [acceptCommission] = useAcceptCommissionMutation();
   const [rejectCommission] = useRejectCommissionMutation();
   const [cancelCommission] = useCancelCommissionMutation();
@@ -259,7 +259,7 @@ export const Commissions = () => {
         const updatedUser = await deleteRequestTerms().unwrap();
         dispatch(updateUser(updatedUser));
         setShowTermsModal(false);
-        // Reset local previews/files
+        // Khởi động lại các file/xem trước cục bộ
         setTermsBgFile(null);
         setTermsBgPreview('');
         alert('Đã xóa Điều khoản nhận vẽ thành công!');
@@ -277,7 +277,7 @@ export const Commissions = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* Tab select header */}
+      {/* Tiêu đề chọn Tab */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>
           {t.commissions}
@@ -285,7 +285,7 @@ export const Commissions = () => {
 
         {user && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {/* Request Terms configuration button */}
+            {/* Nút cấu hình điều khoản yêu cầu (Request Terms) */}
             <button
               onClick={() => setShowTermsModal(true)}
               className="btn btn-secondary"
@@ -361,7 +361,7 @@ export const Commissions = () => {
         )}
       </div>
 
-      {/* Main List of Commissions */}
+      {/* Danh sách các Commission chính */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {commTab === 'received' && !user?.requestTerms?.hasTerms ? (
           <div
@@ -445,7 +445,7 @@ export const Commissions = () => {
                 onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
                 onMouseOut={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
               >
-                {/* 1. Header: Partner details and Status tags */}
+                {/* 1. Header: Chi tiết đối tác và nhãn trạng thái (Status tags) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <img
@@ -472,7 +472,7 @@ export const Commissions = () => {
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* Status Pill */}
+                    {/* Nhãn trạng thái (Status Pill) */}
                     <span
                       style={{
                         backgroundColor: 'rgba(255,255,255,0.02)',
@@ -487,7 +487,7 @@ export const Commissions = () => {
                       {getStatusLabel(comm.status)}
                     </span>
 
-                    {/* Escrow payment Pill */}
+                    {/* Nhãn thanh toán Escrow */}
                     <span
                       style={{
                         backgroundColor: comm.paymentStatus === 'escrow' ? 'rgba(20, 184, 166, 0.1)' : 'rgba(255,255,255,0.02)',
@@ -504,7 +504,7 @@ export const Commissions = () => {
                   </div>
                 </div>
 
-                {/* 2. Body Details: Title, price, deadline and brief description */}
+                {/* 2. Body Details: Tiêu đề, giá cả, hạn chót và mô tả ngắn */}
                 <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '24px' }} className="commission-body-grid">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 800 }}>{comm.title}</h3>
@@ -550,7 +550,7 @@ export const Commissions = () => {
                   </div>
                 </div>
 
-                {/* 3. Footer: Workflow actions */}
+                {/* 3. Footer: Các hành động quy trình (Workflow actions) */}
                 <div
                   style={{
                     display: 'flex',
@@ -561,7 +561,7 @@ export const Commissions = () => {
                     paddingTop: '20px',
                   }}
                 >
-                  {/* Artist Actions */}
+                  {/* Các hành động của Artist */}
                   {commTab === 'received' && (
                     <>
                       {comm.status === 'pending' && (
@@ -607,7 +607,7 @@ export const Commissions = () => {
                     </>
                   )}
 
-                  {/* Client Actions */}
+                  {/* Các hành động của Client */}
                   {commTab === 'requested' && (
                     <>
                       {comm.status === 'pending' && (
@@ -639,7 +639,7 @@ export const Commissions = () => {
         )}
       </div>
 
-      {/* Completed Artwork Delivery Modal popup */}
+      {/* Popup Modal bàn giao tác phẩm đã hoàn thành */}
       {deliveryTargetId && (
         <div
           style={{
@@ -732,7 +732,7 @@ export const Commissions = () => {
                 </p>
               </div>
 
-              {/* Previews */}
+              {/* Xem trước (Previews) */}
               {deliveryPreviews.length > 0 && (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {deliveryPreviews.map((url, idx) => (
@@ -771,7 +771,7 @@ export const Commissions = () => {
         </div>
       )}
 
-      {/* Request Terms Setup Modal */}
+      {/* Modal thiết lập điều khoản yêu cầu (Request Terms) */}
       {showTermsModal && (
         <div
           style={{
@@ -803,7 +803,7 @@ export const Commissions = () => {
               boxShadow: 'var(--card-shadow)',
             }}
           >
-            {/* Modal Header */}
+            {/* Header của Modal */}
             <div
               style={{
                 display: 'flex',
@@ -830,7 +830,7 @@ export const Commissions = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body của Modal */}
             <form onSubmit={handleTermsSubmit} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {termsError && (
                 <div
@@ -849,7 +849,7 @@ export const Commissions = () => {
                 </div>
               )}
 
-              {/* Cover Image Upload (Pixiv style background) */}
+              {/* Tải lên ảnh bìa (Phong cách hình nền Pixiv) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Ảnh bìa Điều khoản (Cover Background) *</label>
                 <div
@@ -917,7 +917,7 @@ export const Commissions = () => {
                 </div>
               </div>
 
-              {/* Title */}
+              {/* Tiêu đề */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Tiêu đề Điều khoản *</label>
                 <input
@@ -930,7 +930,7 @@ export const Commissions = () => {
                 />
               </div>
 
-              {/* Details */}
+              {/* Chi tiết */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Chi tiết điều khoản (Điều kiện, thời gian vẽ...) *</label>
                 <textarea
@@ -944,7 +944,7 @@ export const Commissions = () => {
                 />
               </div>
 
-              {/* Price */}
+              {/* Giá cả */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700 }}>Giá khởi điểm mong muốn (VND ₫) *</label>
                 <input
@@ -958,7 +958,7 @@ export const Commissions = () => {
                 />
               </div>
 
-              {/* Action buttons */}
+              {/* Các nút hành động */}
               <div
                 style={{
                   display: 'flex',
@@ -969,7 +969,7 @@ export const Commissions = () => {
                   marginTop: '12px',
                 }}
               >
-                {/* Delete button (only if has terms already) */}
+                {/* Nút xóa (chỉ khi đã có điều khoản sẵn) */}
                 {user?.requestTerms?.hasTerms ? (
                   <button
                     type="button"

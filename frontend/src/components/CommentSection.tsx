@@ -67,7 +67,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
     }
   };
 
-  // Build comment trees: separate root comments from nested replies
+  // Xây dựng comment trees: tách các bình luận gốc khỏi các phản hồi lồng nhau
   const rootComments = comments.filter((c) => !c.parentCommentId);
   const replies = comments.filter((c) => c.parentCommentId);
 
@@ -169,7 +169,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
             {comment.content}
           </p>
 
-          {/* Sub reply input box */}
+          {/* Hộp nhập phản hồi con (Sub reply) */}
           {replyTarget === comment._id && (
             <form
               onSubmit={(e) => handlePostReply(e, comment._id)}
@@ -197,7 +197,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
             </form>
           )}
 
-          {/* Render replies to this specific root comment */}
+          {/* Render các phản hồi cho bình luận gốc cụ thể này */}
           {!isReply &&
             replies
               .filter((r) => r.parentCommentId === comment._id)
@@ -213,7 +213,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
         {t.comments} ({comments.length})
       </h3>
 
-      {/* Main post comment text area */}
+      {/* Vùng nhập văn bản bình luận bài viết chính */}
       {user ? (
         <form onSubmit={handlePostRootComment} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
           <textarea
@@ -255,7 +255,7 @@ export const CommentSection = ({ illustrationId, artistId, comments }: CommentSe
         </div>
       )}
 
-      {/* Renders hierarchical lists */}
+      {/* Render danh sách theo phân cấp */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {rootComments.length === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>

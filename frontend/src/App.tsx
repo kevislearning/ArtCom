@@ -5,7 +5,7 @@ import type { RootState } from './store';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 
-// Pages
+// Các trang (Pages)
 import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
 import { ArtworkDetails } from './pages/ArtworkDetails';
@@ -21,7 +21,7 @@ import { Rankings } from './pages/Rankings.tsx';
 import { Bookmarks } from './pages/Bookmarks.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 
-// Utilities
+// Tiện ích (Utilities)
 import { initSocket, disconnectSocket } from './utils/socket';
 import { api } from './store/api';
 
@@ -30,23 +30,23 @@ function App() {
   const { user, token } = useSelector((state: RootState) => state.auth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Load and apply theme from localStorage on initial boot
+  // Tải và áp dụng theme từ localStorage trong lần khởi động đầu tiên
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
-  // Initialize WebSockets upon login session activation
+  // Khởi tạo WebSockets sau khi kích hoạt phiên đăng nhập (login session)
   useEffect(() => {
     if (token && user) {
       initSocket(
         token,
         () => {
-          // Invalidate notifications cache on new socket push alert
+          // Invalidate cache của notifications khi nhận được socket push alert mới
           dispatch(api.util.invalidateTags(['Notification']));
         },
         () => {
-          // Invalidate chats cache on new message socket push alert
+          // Invalidate cache của chats khi nhận được tin nhắn socket push alert mới
           dispatch(api.util.invalidateTags(['Chat']));
         }
       );
@@ -62,16 +62,16 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        {/* Collapsible Sidebar */}
+        {/* Sidebar có thể thu gọn (Collapsible Sidebar) */}
         <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
         <div className="app-main">
-          {/* Top Sticky Header */}
+          {/* Sticky Header trên cùng */}
           <TopBar />
 
           <main className="app-content animate-fade-in">
             <Routes>
-              {/* Public Routes */}
+              {/* Các Route công khai (Public Routes) */}
               <Route path="/" element={<Home />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/artwork/:id" element={<ArtworkDetails />} />
@@ -79,7 +79,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/rankings" element={<Rankings />} />
 
-              {/* Session Protected Routes */}
+              {/* Các Route được bảo vệ bằng phiên làm việc (Session Protected) */}
               <Route
                 path="/following"
                 element={user ? <Following /> : <Navigate to="/login" replace />}
@@ -105,7 +105,7 @@ function App() {
                 element={user ? <Dashboard /> : <Navigate to="/login" replace />}
               />
 
-              {/* Authentication Routes */}
+              {/* Các Route xác thực (Authentication Routes) */}
               <Route
                 path="/login"
                 element={!user ? <Login /> : <Navigate to="/" replace />}
@@ -115,7 +115,7 @@ function App() {
                 element={!user ? <Register /> : <Navigate to="/" replace />}
               />
 
-              {/* Fallback route */}
+              {/* Route mặc định dự phòng (Fallback Route) */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

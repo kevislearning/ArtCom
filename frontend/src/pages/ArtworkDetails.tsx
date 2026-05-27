@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Heart, Bookmark, Eye, Calendar, Trash2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { Heart, Bookmark, Eye, Calendar, Trash2, ArrowLeft, ChevronLeft, ChevronRight, Maximize2, Plus, Minus, RotateCcw, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import type { RootState } from '../store';
 import { translations } from '../utils/translation';
 import {
@@ -23,16 +23,101 @@ export const ArtworkDetails = () => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = language === 'en' ? translations.en : translations.vn;
 
-  // Carousel slide index
+  // Chỉ số slide của Carousel
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Queries
+  // State của Modal xem toàn màn hình (Fullscreen Viewer)
+  const [showFullscreen, setShowFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Lắng nghe phím Escape để đóng modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowFullscreen(false);
+        setZoom(1);
+        setPosition({ x: 0, y: 0 });
+      }
+    };
+    if (showFullscreen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showFullscreen]);
+
+  // Vô hiệu hóa body scroll khi modal đang mở
+  useEffect(() => {
+    if (showFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showFullscreen]);
+
+  // Các bộ xử lý kéo/di chuyển (Pan handlers)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (zoom === 1) return; // Chỉ cho phép kéo/di chuyển khi đã phóng to
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Bộ xử lý phóng to bằng con lăn chuột (Wheel zoom handler)
+  const handleWheel = (e: React.WheelEvent) => {
+    const zoomStep = 0.15;
+    let newZoom = zoom + (e.deltaY < 0 ? zoomStep : -zoomStep);
+    newZoom = Math.max(1, Math.min(5, newZoom)); // Giới hạn phạm vi phóng to
+    setZoom(newZoom);
+    if (newZoom === 1) {
+      setPosition({ x: 0, y: 0 }); // Khôi phục lại vị trí kéo nếu thu nhỏ về 1x
+    }
+  };
+
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(5, prev + 0.25));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => {
+      const nextZoom = Math.max(1, prev - 0.25);
+      if (nextZoom === 1) setPosition({ x: 0, y: 0 });
+      return nextZoom;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+
+  // Các câu truy vấn (Queries)
   const { data: artwork, isLoading, error } = useGetIllustrationByIdQuery(id || '');
   const { data: comments = [] } = useGetCommentsQuery(id || '', { skip: !id });
 
   const artistId = typeof artwork?.artistId === 'object' ? artwork.artistId._id : '';
   
-  // Follow query
+  // Câu truy vấn theo dõi (Follow query)
   const { data: followData = { followed: false } } = useCheckFollowStatusQuery(artistId, {
     skip: !artistId || !user,
   });
@@ -122,7 +207,7 @@ export const ArtworkDetails = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-      {/* Back button */}
+      {/* Nút quay lại */}
       <div>
         <button
           onClick={() => navigate(-1)}
@@ -143,7 +228,7 @@ export const ArtworkDetails = () => {
         </button>
       </div>
 
-      {/* Main double column layout */}
+      {/* Bố cục hai cột chính */}
       <div
         style={{
           display: 'grid',
@@ -153,7 +238,7 @@ export const ArtworkDetails = () => {
         }}
         className="artwork-details-grid"
       >
-        {/* Left Column: Image Viewer / Carousel */}
+        {/* Cột trái: Trình xem ảnh / Carousel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div
             className="glass-panel"
@@ -169,7 +254,7 @@ export const ArtworkDetails = () => {
               border: '1px solid var(--glass-border)',
             }}
           >
-            {/* Carousel navigation controls */}
+            {/* Các nút điều hướng Carousel */}
             {artwork.imageUrls.length > 1 && (
               <>
                 <button
@@ -215,23 +300,73 @@ export const ArtworkDetails = () => {
               </>
             )}
 
-            {/* Displaying Image slide */}
+            {/* Đang hiển thị slide hình ảnh */}
             {(() => {
               const currentImg = artwork.imageUrls.at(currentSlide) || '';
               return (
-                <img
-                  src={currentImg.startsWith('http') ? currentImg : `${API_BASE_URL}${currentImg}`}
-                  alt={artwork.title}
+                <div
+                  onClick={() => setShowFullscreen(true)}
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'zoom-in',
+                    position: 'relative',
                   }}
-                />
+                  className="artwork-image-container"
+                >
+                  <style>{`
+                    .artwork-image-container:hover .zoom-hover-btn {
+                      opacity: 1 !important;
+                      transform: scale(1) !important;
+                    }
+                    .artwork-image-container:hover img {
+                      filter: brightness(1.05);
+                      transition: filter var(--transition-fast);
+                    }
+                  `}</style>
+                  <img
+                    src={currentImg.startsWith('http') ? currentImg : `${API_BASE_URL}${currentImg}`}
+                    alt={artwork.title}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                    }}
+                  />
+                  {/* Nút phóng to tinh tế, đẹp mắt khi hover */}
+                  <div
+                    className="zoom-hover-btn"
+                    style={{
+                      position: 'absolute',
+                      top: '16px',
+                      right: '16px',
+                      backgroundColor: 'rgba(18, 19, 26, 0.75)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-primary)',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 25,
+                      opacity: 0,
+                      transform: 'scale(0.9)',
+                      transition: 'opacity var(--transition-fast), transform var(--transition-fast)',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                    }}
+                  >
+                    <Maximize2 size={18} />
+                  </div>
+                </div>
               );
             })()}
 
-            {/* Pagination indicator */}
+            {/* Chỉ báo phân trang (Pagination indicator) */}
             {artwork.imageUrls.length > 1 && (
               <div
                 style={{
@@ -250,7 +385,7 @@ export const ArtworkDetails = () => {
             )}
           </div>
 
-          {/* Comment Tree Segment */}
+          {/* Phân khúc nhánh bình luận (Comment Tree) */}
           {artwork.commentsEnabled ? (
             <div
               className="glass-panel"
@@ -281,9 +416,9 @@ export const ArtworkDetails = () => {
           )}
         </div>
 
-        {/* Right Column: Interaction details tray */}
+        {/* Cột phải: Khay chi tiết tương tác */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Glass details card */}
+          {/* Thẻ chi tiết hiệu ứng kính mờ (Glass details) */}
           <div
             className="glass-panel"
             style={{
@@ -295,7 +430,7 @@ export const ArtworkDetails = () => {
               gap: '24px',
             }}
           >
-            {/* Title & owner controls */}
+            {/* Tiêu đề & Các quyền điều khiển của chủ sở hữu */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
               <div>
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{artwork.title}</h1>
@@ -373,7 +508,7 @@ export const ArtworkDetails = () => {
               )}
             </div>
 
-            {/* Artist Creator segment */}
+            {/* Phân khúc thông tin Artist Creator */}
             {artist && (
               <div
                 style={{
@@ -418,7 +553,7 @@ export const ArtworkDetails = () => {
               </div>
             )}
 
-            {/* Description */}
+            {/* Mô tả */}
             {artwork.description && (
               <p
                 style={{
@@ -432,7 +567,7 @@ export const ArtworkDetails = () => {
               </p>
             )}
 
-            {/* Tags */}
+            {/* Các nhãn (Tags) */}
             {artwork.tags.length > 0 && (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {artwork.tags.map((tag) => (
@@ -455,7 +590,7 @@ export const ArtworkDetails = () => {
               </div>
             )}
 
-            {/* Metrics and Actions Bar */}
+            {/* Thanh hiển thị các chỉ số và hành động (Metrics and Actions) */}
             <div
               style={{
                 display: 'flex',
@@ -509,6 +644,201 @@ export const ArtworkDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal xem toàn màn hình tương tác (Fullscreen Interactive Viewer) */}
+      {showFullscreen && (() => {
+        const currentImg = artwork.imageUrls.at(currentSlide) || '';
+        const imgUrl = currentImg.startsWith('http') ? currentImg : `${API_BASE_URL}${currentImg}`;
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(10, 11, 16, 0.95)',
+              backdropFilter: 'blur(20px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              userSelect: 'none',
+            }}
+            onWheel={handleWheel}
+          >
+            {/* Nút đóng (Góc trên bên phải) */}
+            <button
+              onClick={() => {
+                setShowFullscreen(false);
+                setZoom(1);
+                setPosition({ x: 0, y: 0 });
+              }}
+              style={{
+                position: 'absolute',
+                top: '24px',
+                right: '24px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '48px',
+                height: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+                zIndex: 100,
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <X size={24} />
+            </button>
+
+            {/* Khung chứa kéo/di chuyển (Panning Container) */}
+            <div
+              style={{
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {/* Phần tử hình ảnh có hiệu ứng chuyển động */}
+              <img
+                src={imgUrl}
+                alt={artwork.title}
+                style={{
+                  maxWidth: '90%',
+                  maxHeight: '90%',
+                  objectFit: 'contain',
+                  transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
+                  transition: isDragging ? 'none' : 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                  pointerEvents: 'none', // Ngăn chặn hành động kéo ảnh mặc định của trình duyệt
+                }}
+              />
+            </div>
+
+            {/* Bảng điều khiển thu phóng nổi (Floating Zoom Control) */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '40px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(18, 19, 26, 0.85)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '30px',
+                padding: '8px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                zIndex: 100,
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <button
+                onClick={handleZoomOut}
+                disabled={zoom <= 1}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: zoom <= 1 ? 'var(--text-muted)' : '#ffffff',
+                  cursor: zoom <= 1 ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px',
+                }}
+                title="Thu nhỏ"
+              >
+                <Minus size={20} />
+              </button>
+
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff', minWidth: '48px', textAlign: 'center' }}>
+                {Math.round(zoom * 100)}%
+              </span>
+
+              <button
+                onClick={handleZoomIn}
+                disabled={zoom >= 5}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: zoom >= 5 ? 'var(--text-muted)' : '#ffffff',
+                  cursor: zoom >= 5 ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px',
+                }}
+                title="Phóng to"
+              >
+                <Plus size={20} />
+              </button>
+
+              <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--glass-border)' }}></div>
+
+              <button
+                onClick={handleResetZoom}
+                disabled={zoom === 1 && position.x === 0 && position.y === 0}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: (zoom === 1 && position.x === 0 && position.y === 0) ? 'var(--text-muted)' : '#ffffff',
+                  cursor: (zoom === 1 && position.x === 0 && position.y === 0) ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px',
+                }}
+                title="Đặt lại kích thước"
+              >
+                <RotateCcw size={18} />
+              </button>
+            </div>
+
+            {/* Tooltip hướng dẫn trên top bar */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '24px',
+                left: '24px',
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '20px',
+              }}
+            >
+              <span>🖱️ Cuộn chuột để Phóng to / Thu nhỏ</span>
+              <span style={{ opacity: 0.3 }}>|</span>
+              <span>🖐️ Kéo giữ chuột để Di chuyển</span>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -26,9 +26,9 @@ export const sendMessage = async (req, res) => {
       .populate('senderId', 'username nickname avatarUrl isArtist')
       .populate('receiverId', 'username nickname avatarUrl isArtist');
 
-    // Deliver via Socket.io
+    // Chuyển phát qua Socket.io
     const chatRoomName = [senderId, receiverId].sort().join('-');
-    // Emit to active chat room
+    // Emit đến room chat đang hoạt động
     sendToUser(receiverId, 'new_message', populated);
 
     res.status(201).json(populated);
@@ -43,7 +43,7 @@ export const getMessages = async (req, res) => {
     const otherUserId = req.params.userId;
     const userId = req.user.id;
 
-    // Fetch messages between these two users
+    // Lấy danh sách tin nhắn giữa hai người dùng này
     const messages = await Message.find({
       $or: [
         { senderId: userId, receiverId: otherUserId },
@@ -54,7 +54,7 @@ export const getMessages = async (req, res) => {
       .populate('senderId', 'username nickname avatarUrl isArtist')
       .populate('receiverId', 'username nickname avatarUrl isArtist');
 
-    // Mark these messages as read if the recipient was the current user
+    // Đánh dấu các tin nhắn này là đã đọc nếu người nhận là người dùng hiện tại
     await Message.updateMany(
       { senderId: otherUserId, receiverId: userId, isRead: false },
       { isRead: true }
@@ -68,13 +68,13 @@ export const getMessages = async (req, res) => {
 };
 
 /**
- * Returns a premium double-column visual layout listing of conversations
+ * Trả về danh sách cuộc hội thoại với bố cục trực quan hai cột cao cấp
  */
 export const getConversations = async (req, res) => {
   try {
     const userId = req.user._id.toString();
 
-    // Find all messages involving the current user
+    // Tìm tất cả tin nhắn liên quan đến người dùng hiện tại
     const messages = await Message.find({
       $or: [{ senderId: userId }, { receiverId: userId }],
     })
@@ -101,7 +101,7 @@ export const getConversations = async (req, res) => {
       }
     }
 
-    // Calculate unread counts
+    // Tính số lượng tin nhắn chưa đọc
     for (const [otherUserIdStr, convo] of conversationMap.entries()) {
       const unreadCount = await Message.countDocuments({
         senderId: otherUserIdStr,

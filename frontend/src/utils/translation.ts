@@ -1,6 +1,6 @@
 export const translations = {
   vn: {
-    // Navigation
+    // Điều hướng (Navigation)
     home: 'Trang chủ',
     explore: 'Khám phá',
     following: 'Đang theo dõi',
@@ -16,23 +16,23 @@ export const translations = {
     dashboardNav: 'Dashboard',
     notifications: 'Thông báo',
     
-    // Auth & General
+    // Xác thực & Chung (Auth & General)
     username: 'Tên tài khoản',
     email: 'Địa chỉ email',
     password: 'Mật khẩu',
     nickname: 'Biệt danh',
     bio: 'Giới thiệu bản thân',
-    isArtist: 'Đăng ký tài khoản Họa sĩ (Artist)',
+    isArtist: 'Đăng ký tài khoản Người dùng (User)',
     save: 'Lưu thay đổi',
     cancel: 'Hủy bỏ',
     confirm: 'Xác nhận',
     submit: 'Gửi yêu cầu',
     noAccount: 'Chưa có tài khoản?',
     haveAccount: 'Đã có tài khoản?',
-    searchPlaceholder: 'Tìm kiếm tác phẩm, họa sĩ, thẻ tag...',
+    searchPlaceholder: 'Tìm kiếm tác phẩm, người dùng, thẻ tag...',
     loading: 'Đang tải...',
     
-    // Home Screen
+    // Màn hình trang chủ (Home Screen)
     trendingTags: 'Xu hướng nổi bật',
     recommended: 'Tác phẩm đề cử',
     popularRankings: 'Bảng xếp hạng hot',
@@ -41,7 +41,7 @@ export const translations = {
     artworkNotFound: 'Không tìm thấy tác phẩm hoặc có lỗi xảy ra.',
     followedNewest: 'Mới nhất từ người theo dõi',
     
-    // Post details
+    // Chi tiết bài viết (Post details)
     views: 'Lượt xem',
     likes: 'Lượt thích',
     bookmarks: 'Đã lưu',
@@ -54,7 +54,7 @@ export const translations = {
     submitComment: 'Bình luận',
     commentsDisabled: 'Chức năng bình luận đã bị khóa cho tác phẩm này.',
     
-    // Creator Portfolio
+    // Portfolio của Creator
     portfolio: 'Tác phẩm',
     bookmarksTab: 'Đã lưu',
     commissionsTab: 'Lịch sử nhận vẽ',
@@ -62,7 +62,7 @@ export const translations = {
     followersCount: 'Người theo dõi',
     followingCount: 'Đang theo dõi',
     
-    // Wallet
+    // Ví (Wallet)
     walletBalance: 'Số dư',
     deposit: 'Nạp tiền',
     withdraw: 'Rút tiền',
@@ -77,7 +77,7 @@ export const translations = {
     transactionType: 'Loại giao dịch',
     transactionDetail: 'Mô tả chi tiết',
     
-    // Commissions
+    // Commissions (Yêu cầu thiết kế) (Yêu cầu thiết kế)
     newRequest: 'Tạo yêu cầu vẽ tranh mới',
     requestTitle: 'Tiêu đề yêu cầu',
     requestDesc: 'Mô tả chi tiết (Brief)',
@@ -102,14 +102,14 @@ export const translations = {
     deliverySuccess: 'Đã bàn giao tác phẩm thành công!',
     commissionResult: 'Xem sản phẩm hoàn thành',
     
-    // Chat
+    // Chat (Trò chuyện) (Trò chuyện)
     activeChat: 'Cuộc trò chuyện',
     typing: 'Đang nhập tin nhắn...',
     send: 'Gửi',
     chatPlaceholder: 'Nhập nội dung tin nhắn...',
     noConversations: 'Chưa có cuộc trò chuyện nào.',
     
-    // Settings
+    // Cài đặt (Settings)
     languageSelect: 'Ngôn ngữ giao diện',
     themeSelect: 'Giao diện hiển thị',
     darkMode: 'Giao diện tối',
@@ -117,9 +117,55 @@ export const translations = {
     editProfile: 'Chỉnh sửa trang cá nhân',
     avatar: 'Ảnh đại diện (Avatar)',
     banner: 'Ảnh bìa (Banner)',
+
+    // Bổ sung cho ví (Wallet additional)
+    minDepositError: 'Số tiền nạp tối thiểu là 100,000 VND!',
+    minWithdrawError: 'Số tiền rút tối thiểu là 50,000 VND!',
+    momoSuccess: 'Thanh toán thành công! Đã nạp +{amount} vào ví thông qua MoMo.',
+    momoConfirmError: 'Có lỗi xảy ra khi xác nhận thanh toán MoMo!',
+    momoInitError: 'Có lỗi xảy ra khi khởi tạo giao dịch MoMo!',
+    momoNoLink: 'Không nhận được liên kết thanh toán từ MoMo!',
+    bankSuccess: 'Đã nạp thành công +{amount} thông qua chuyển khoản Ngân hàng (VietQR)!',
+    bankConfirmError: 'Có lỗi xảy ra khi xác nhận giao dịch chuyển khoản!',
+    devModeDesc: '🔧 Chế độ nhà phát triển (Localhost Dev Mode): Bạn vừa quay về từ MoMo Sandbox của mã đơn hàng {orderId}. Để tiếp tục chạy thử luồng nạp tiền mà không cần quét mã thật, bạn có thể click nút dưới đây để giả lập thanh toán thành công.',
+    devModeBtn: 'Giả lập nạp thành công {amount}',
+    devModeIgnore: 'Bỏ qua',
+    walletMomo: 'Ví MoMo',
+    walletBank: 'VietQR Bank',
+    momoPlaceholder: 'Nhập tiền nạp MoMo (đ)...',
+    bankPlaceholder: 'Nhập tiền chuyển khoản (đ)...',
+    initiating: 'Đang khởi tạo...',
+    momoBtn: 'Nạp qua Ví MoMo',
+    bankBtn: 'Tạo mã VietQR',
+    withdrawBtn: 'Rút tiền ngay',
+    withdrawing: 'Đang thực hiện...',
+    commissionIdLabel: 'Mã Commission: #{id}',
+    bankTitle: 'Chuyển khoản bằng mã VietQR',
+    bankDesc: 'Quét mã bằng ứng dụng ngân hàng của bạn để tự điền thông tin chuyển khoản nhanh chóng.',
+    bankRecipient: 'Ngân hàng thụ hưởng',
+    bankAccountNo: 'Số tài khoản',
+    bankAccountName: 'Tên chủ tài khoản',
+    bankAmount: 'Số tiền chuyển khoản',
+    bankContent: 'Nội dung chuyển khoản',
+    bankCopy: 'Sao chép',
+    bankCopied: 'Đã sao chép',
+    bankNote: 'Số dư sẽ được cộng tự động sau khi hệ thống nhận được giao dịch chuyển khoản thành công từ phía ngân hàng liên kết.',
+    bankClose: 'Đóng lại',
+    bankVerify: 'Tôi đã chuyển khoản',
+    bankVerifying: 'Đang đối soát giao dịch...',
+    withdrawSuccess: 'Đã rút thành công {amount} từ tài khoản!',
+    withdrawError: 'Có lỗi xảy ra khi rút tiền!',
+    mockMomoError: 'Có lỗi xảy ra khi giả lập xác nhận giao dịch MoMo!',
+    ledgerDeposit: 'Nạp tiền (Deposit)',
+    ledgerWithdraw: 'Rút tiền (Withdraw)',
+    ledgerEscrowHold: 'Tạm khóa (Escrow Hold)',
+    ledgerEscrowRelease: 'Giải ngân (Escrow Release)',
+    ledgerEscrowRefund: 'Hoàn tiền (Escrow Refund)',
+    markAllRead: 'Đánh dấu đã đọc',
+    noNewNotifications: 'Không có thông báo mới.',
   },
   en: {
-    // Navigation
+    // Điều hướng (Navigation)
     home: 'Home',
     explore: 'Explore',
     following: 'Following',
@@ -135,32 +181,32 @@ export const translations = {
     dashboardNav: 'Dashboard',
     notifications: 'Notifications',
     
-    // Auth & General
+    // Xác thực & Chung (Auth & General)
     username: 'Username',
     email: 'Email address',
     password: 'Password',
     nickname: 'Nickname',
     bio: 'Short biography',
-    isArtist: 'Register as an Artist',
+    isArtist: 'Register as an User',
     save: 'Save Changes',
     cancel: 'Cancel',
     confirm: 'Confirm',
     submit: 'Submit Request',
     noAccount: "Don't have an account?",
     haveAccount: 'Already have an account?',
-    searchPlaceholder: 'Search artworks, artists, tags...',
+    searchPlaceholder: 'Search artworks, users, tags...',
     loading: 'Loading...',
     
-    // Home Screen
+    // Màn hình trang chủ (Home Screen)
     trendingTags: 'Trending Tags',
     recommended: 'Recommended Works',
     popularRankings: 'Popular Rankings',
     newestWorks: 'Newest Artworks',
     noWorks: 'No artworks found.',
     artworkNotFound: 'Artwork not found or an error occurred.',
-    followedNewest: 'Newest by Followed Artists',
+    followedNewest: 'Newest by Followed Users',
     
-    // Post details
+    // Chi tiết bài viết (Post details)
     views: 'Views',
     likes: 'Likes',
     bookmarks: 'Bookmarks',
@@ -173,7 +219,7 @@ export const translations = {
     submitComment: 'Post Comment',
     commentsDisabled: 'Comments are disabled for this artwork.',
     
-    // Creator Portfolio
+    // Portfolio của Creator
     portfolio: 'Artworks',
     bookmarksTab: 'Bookmarks',
     commissionsTab: 'Commissions history',
@@ -181,7 +227,7 @@ export const translations = {
     followersCount: 'Followers',
     followingCount: 'Following',
     
-    // Wallet
+    // Ví (Wallet)
     walletBalance: 'Virtual Wallet Balance',
     deposit: 'Deposit (Simulated)',
     withdraw: 'Withdraw (Simulated)',
@@ -196,7 +242,7 @@ export const translations = {
     transactionType: 'Transaction Type',
     transactionDetail: 'Detailed Description',
     
-    // Commissions
+    // Commissions (Yêu cầu thiết kế) (Yêu cầu thiết kế)
     newRequest: 'Create New Commission Request',
     requestTitle: 'Request Title',
     requestDesc: 'Detailed description (Brief)',
@@ -221,14 +267,14 @@ export const translations = {
     deliverySuccess: 'Artwork delivered successfully!',
     commissionResult: 'View delivered artwork',
     
-    // Chat
+    // Chat (Trò chuyện) (Trò chuyện)
     activeChat: 'Chat Room',
     typing: 'is typing...',
     send: 'Send',
     chatPlaceholder: 'Type your message...',
     noConversations: 'No conversations yet.',
     
-    // Settings
+    // Cài đặt (Settings)
     languageSelect: 'Interface Language',
     themeSelect: 'Color Theme',
     darkMode: 'Dark Mode',
@@ -236,5 +282,51 @@ export const translations = {
     editProfile: 'Edit Profile',
     avatar: 'Profile Picture (Avatar)',
     banner: 'Cover Banner',
+
+    // Bổ sung cho ví (Wallet additional)
+    minDepositError: 'Minimum deposit amount is 100,000 VND!',
+    minWithdrawError: 'Minimum withdrawal amount is 50,000 VND!',
+    momoSuccess: 'Payment successful! Deposited +{amount} to wallet via MoMo.',
+    momoConfirmError: 'An error occurred while confirming MoMo payment!',
+    momoInitError: 'An error occurred while initiating MoMo transaction!',
+    momoNoLink: 'No payment link received from MoMo!',
+    bankSuccess: 'Successfully deposited +{amount} via Bank Transfer (VietQR)!',
+    bankConfirmError: 'An error occurred while confirming bank transfer!',
+    devModeDesc: '🔧 Developer Mode (Localhost Dev Mode): You have just returned from MoMo Sandbox for order {orderId}. To continue testing the deposit flow without scanning a real QR code, you can click the button below to mock a successful payment.',
+    devModeBtn: 'Mock deposit success {amount}',
+    devModeIgnore: 'Ignore',
+    walletMomo: 'MoMo Wallet',
+    walletBank: 'VietQR Bank',
+    momoPlaceholder: 'Enter MoMo deposit amount (đ)...',
+    bankPlaceholder: 'Enter bank transfer amount (đ)...',
+    initiating: 'Initiating...',
+    momoBtn: 'Pay with MoMo',
+    bankBtn: 'Create VietQR Code',
+    withdrawBtn: 'Withdraw Now',
+    withdrawing: 'Processing...',
+    commissionIdLabel: 'Commission ID: #{id}',
+    bankTitle: 'Transfer using VietQR Code',
+    bankDesc: 'Scan the code with your mobile banking app to auto-fill the transfer details quickly.',
+    bankRecipient: 'Recipient Bank',
+    bankAccountNo: 'Account Number',
+    bankAccountName: 'Account Name',
+    bankAmount: 'Transfer Amount',
+    bankContent: 'Transfer Description',
+    bankCopy: 'Copy',
+    bankCopied: 'Copied',
+    bankNote: 'The balance will be credited automatically after the system receives a successful bank transfer transaction.',
+    bankClose: 'Close',
+    bankVerify: 'I have transferred',
+    bankVerifying: 'Verifying transaction...',
+    withdrawSuccess: 'Successfully withdrew {amount} from account!',
+    withdrawError: 'An error occurred during withdrawal!',
+    mockMomoError: 'An error occurred while mocking MoMo payment confirmation!',
+    ledgerDeposit: 'Deposit',
+    ledgerWithdraw: 'Withdraw',
+    ledgerEscrowHold: 'Escrow Hold',
+    ledgerEscrowRelease: 'Escrow Release',
+    ledgerEscrowRefund: 'Escrow Refund',
+    markAllRead: 'Mark all as read',
+    noNewNotifications: 'No new notifications.',
   }
 };

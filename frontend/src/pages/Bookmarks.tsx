@@ -11,12 +11,12 @@ export const Bookmarks = () => {
   const { language } = useSelector((state: RootState) => state.auth);
   const t = language === 'en' ? translations.en : translations.vn;
 
-  // Fetch bookmarked illustrations
+  // Lấy danh sách các illustration đã đánh dấu (bookmarked)
   const { data: artworks = [], isLoading, refetch } = useGetBookmarkedIllustrationsQuery();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      {/* Header section */}
+      {/* Phân khúc tiêu đề (Header) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -39,7 +39,7 @@ export const Bookmarks = () => {
         </button>
       </div>
 
-      {/* Grid of Results */}
+      {/* Lưới hiển thị kết quả */}
       {isLoading ? (
         <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
       ) : artworks.length === 0 ? (

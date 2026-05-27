@@ -11,6 +11,14 @@ export const authApi = api.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+    googleLogin: builder.mutation<User & { token: string }, { credential: string }>({
+      query: (body) => ({
+        url: '/auth/google',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
     register: builder.mutation<User & { token: string }, any>({
       query: (data) => ({
         url: '/auth/register',
@@ -64,11 +72,16 @@ export const authApi = api.injectEndpoints({
       }),
       invalidatesTags: (result) => ['User', { type: 'User', id: result?._id }],
     }),
+    searchUsers: builder.query<any[], string>({
+      query: (search) => `/auth/search?search=${encodeURIComponent(search)}`,
+      providesTags: ['User'],
+    }),
   }),
 });
 
 export const {
   useLoginMutation,
+  useGoogleLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
   useGetPublicProfileQuery,
@@ -77,4 +90,5 @@ export const {
   useChangePasswordMutation,
   useUpdateRequestTermsMutation,
   useDeleteRequestTermsMutation,
+  useSearchUsersQuery,
 } = authApi;

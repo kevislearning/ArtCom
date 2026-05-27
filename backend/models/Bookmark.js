@@ -20,7 +20,7 @@ const bookmarkSchema = new mongoose.Schema(
   }
 );
 
-// Unique index to prevent duplicate bookmarks
+// Index duy nhất để ngăn chặn trùng lặp bookmark
 bookmarkSchema.index({ userId: 1, illustrationId: 1 }, { unique: true });
 
 const Bookmark = mongoose.model('Bookmark', bookmarkSchema);
