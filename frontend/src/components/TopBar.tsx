@@ -258,7 +258,7 @@ export const TopBar = () => {
               type="text"
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
-              placeholder={searchType === 'user' ? (language === 'vn' ? 'Tìm người dùng...' : 'Search users...') : t.searchPlaceholder}
+              placeholder={searchType === 'user' ? (language === 'vn' ? 'Tìm người dùng' : 'Search users') : t.searchPlaceholder}
               style={{
                 width: '100%',
                 background: 'transparent',

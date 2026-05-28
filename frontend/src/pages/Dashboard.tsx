@@ -92,7 +92,7 @@ export const Dashboard = () => {
       case 'private':
         return language === 'vn' ? 'Riêng tư' : 'Private';
       case 'logged_in':
-        return language === 'vn' ? 'Chỉ thành viên' : 'Members Only';
+        return language === 'vn' ? 'Chỉ đăng nhập' : 'Login Only';
       case 'everyone':
       default:
         return language === 'vn' ? 'Công khai' : 'Everyone';

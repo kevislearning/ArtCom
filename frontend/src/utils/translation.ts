@@ -29,7 +29,7 @@ export const translations = {
     submit: 'Gửi yêu cầu',
     noAccount: 'Chưa có tài khoản?',
     haveAccount: 'Đã có tài khoản?',
-    searchPlaceholder: 'Tìm kiếm tác phẩm, người dùng, thẻ tag...',
+    searchPlaceholder: 'Tìm kiếm tác phẩm, thẻ',
     loading: 'Đang tải...',
     
     // Màn hình trang chủ (Home Screen)
