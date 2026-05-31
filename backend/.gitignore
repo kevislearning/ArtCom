@@ -16,9 +16,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
-# # Static user uploads (Multer files)
-# uploads/*
-# !uploads/.gitkeep
+# Static user uploads
+uploads/*
+!uploads/.gitkeep
 
 # Editor and System files
 .vscode/

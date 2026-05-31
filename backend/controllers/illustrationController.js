@@ -51,57 +51,55 @@ export const createIllustration = async (req, res) => {
 
     // Gọi Hugging Face API để phát hiện AI nếu người dùng không tự khai báo
     if (!userDeclaredAI && req.files && req.files[0]) {
-      console.log(`[Hugging Face Scan] Đang tiến hành quét tác phẩm "${title}" bằng AI Image Detector...`);
+      console.log(`[Hugging Face Space Scan] Đang tiến hành quét tác phẩm "${title}" bằng AI Image Detector Space...`);
       try {
         const imageBuffer = fs.readFileSync(req.files[0].path);
         
         let result = null;
         const hfToken = process.env.HF_TOKEN;
+        const spaceUrl = process.env.HF_SPACE_URL || 'https://hirawaru-animeaidetect.hf.space';
+        const predictUrl = spaceUrl.endsWith('/') ? `${spaceUrl}predict` : `${spaceUrl}/predict`;
+        const threshold = parseFloat(process.env.AI_DETECTION_THRESHOLD) || 0.65;
 
-        if (hfToken) {
-          try {
-            console.log('[Hugging Face Scan] Gửi request đến Inference API Router...');
-            const response = await fetch(
-              "https://router.huggingface.co/hf-inference/models/umm-maybe/AI-image-detector",
-              {
-                headers: {
-                  Authorization: `Bearer ${hfToken}`,
-                  "Content-Type": "image/jpeg",
-                },
-                method: "POST",
-                body: imageBuffer,
-              }
-            );
+        console.log(`[Hugging Face Space Scan] Gửi request đến custom Space: ${predictUrl}`);
+        
+        const formData = new FormData();
+        const blob = new Blob([imageBuffer], { type: req.files[0].mimetype || 'image/jpeg' });
+        formData.append('file', blob, req.files[0].originalname || 'image.jpg');
 
-            if (response.ok) {
-              result = await response.json();
-              console.log('[Hugging Face Scan] Nhận kết quả thành công:', JSON.stringify(result, null, 2));
-            } else {
-              const errText = await response.text();
-              console.error(`[Hugging Face Router Failed] Status: ${response.status}. Error: ${errText.substring(0, 200)}`);
-            }
-          } catch (fetchErr) {
-            console.error('[Hugging Face Fetch Error]', fetchErr.message);
+        try {
+          const response = await fetch(predictUrl, {
+            method: 'POST',
+            headers: {
+              ...(hfToken ? { 'Authorization': `Bearer ${hfToken}` } : {})
+            },
+            body: formData
+          });
+
+          if (response.ok) {
+            result = await response.json();
+            console.log('[Hugging Face Space Scan] Nhận kết quả thành công:', JSON.stringify(result, null, 2));
+          } else {
+            const errText = await response.text();
+            console.error(`[Hugging Face Space Failed] Status: ${response.status}. Error: ${errText.substring(0, 200)}`);
           }
-        } else {
-          console.warn('[Hugging Face Auth Failed] Không tìm thấy HF_TOKEN trong .env.');
+        } catch (fetchErr) {
+          console.error('[Hugging Face Space Fetch Error]', fetchErr.message);
         }
 
-        if (Array.isArray(result)) {
-          const artificialResult = result.find(r => r.label === 'artificial');
-          if (artificialResult) {
-            aiProbability = artificialResult.score;
-            console.log(`[Hugging Face Scan] Tỉ lệ AI (artificial) phát hiện được: ${(aiProbability * 100).toFixed(2)}%`);
-            if (aiProbability >= 0.65) {
-              isAIDetected = true;
-              console.log('[Hugging Face Scan] Kết luận: Tác phẩm này sử dụng AI (Tỉ lệ >= 65%). Sẽ được gán nhãn cảnh báo.');
-            } else {
-              console.log('[Hugging Face Scan] Kết luận: Không phát hiện sử dụng AI hoặc dưới ngưỡng cảnh báo (65%).');
-            }
+        if (result && result.all_probs) {
+          // Chỉ số 1 tương ứng với Synthetic (AI-generated)
+          aiProbability = result.all_probs[1];
+          console.log(`[Hugging Face Space Scan] Tỉ lệ AI (Synthetic) phát hiện được: ${(aiProbability * 100).toFixed(2)}%`);
+          if (aiProbability >= threshold) {
+            isAIDetected = true;
+            console.log(`[Hugging Face Space Scan] Kết luận: Tác phẩm này sử dụng AI (Tỉ lệ >= ${(threshold * 100).toFixed(0)}%). Sẽ được gán nhãn cảnh báo.`);
+          } else {
+            console.log(`[Hugging Face Space Scan] Kết luận: Không phát hiện sử dụng AI hoặc dưới ngưỡng cảnh báo (${(threshold * 100).toFixed(0)}%).`);
           }
         }
       } catch (err) {
-        console.error('[Hugging Face Detection Error]', err.message);
+        console.error('[Hugging Face Space Detection Error]', err.message);
       }
     } else if (userDeclaredAI) {
       console.log(`[Hugging Face Scan] Người dùng tự khai báo tác phẩm "${title}" được vẽ bằng AI. Bỏ qua bước quét tự động.`);
