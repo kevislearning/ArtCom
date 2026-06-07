@@ -29,11 +29,26 @@ function App() {
   const dispatch = useDispatch();
   const { user, token } = useSelector((state: RootState) => state.auth);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Tải và áp dụng theme từ localStorage trong lần khởi động đầu tiên
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
+  // Tự động đóng/mở sidebar trên màn hình nhỏ/lớn
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
+      }
+    };
+    handleResize(); // Chạy khi mount
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Khởi tạo WebSockets sau khi kích hoạt phiên đăng nhập (login session)
@@ -63,11 +78,16 @@ function App() {
     <Router>
       <div className="app-container">
         {/* Sidebar có thể thu gọn (Collapsible Sidebar) */}
-        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          mobileOpen={mobileSidebarOpen}
+          setMobileOpen={setMobileSidebarOpen}
+        />
 
         <div className="app-main">
           {/* Sticky Header trên cùng */}
-          <TopBar />
+          <TopBar toggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
 
           <main className="app-content animate-fade-in">
             <Routes>

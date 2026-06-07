@@ -9,6 +9,7 @@ import {
   Plus,
   LogOut,
   Image,
+  Menu,
 } from 'lucide-react';
 import type { RootState } from '../store';
 import {
@@ -24,7 +25,7 @@ import { useLogoutMutation } from '../store/authApi';
 import { disconnectSocket } from '../utils/socket';
 
 
-export const TopBar = () => {
+export const TopBar = ({ toggleMobileSidebar }: { toggleMobileSidebar: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
@@ -145,58 +146,129 @@ export const TopBar = () => {
         backdropFilter: 'blur(16px)',
       }}
     >
+      <style>{`
+        /* Responsive adjustments for TopBar to handle zoom (Ctrl +) and small viewports */
+        @media (max-width: 1200px) {
+          .topbar-btn-text, .topbar-user-name {
+            display: none !important;
+          }
+          .topbar-logout-btn, .topbar-actions button {
+            padding: 8px !important;
+            width: 40px !important;
+            height: 40px !important;
+            justify-content: center !important;
+            border-radius: 50% !important;
+          }
+          .topbar-actions {
+            gap: 10px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          header {
+            padding: 16px !important;
+          }
+          .topbar-logo-text {
+            display: none !important;
+          }
+          .topbar-search-container {
+            padding: 0 8px !important;
+          }
+          .topbar-menu-toggle {
+            display: flex !important;
+          }
+        }
+        @media (max-width: 580px) {
+          .topbar-search-container {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       {/* Cột trái: Logo & Tên website */}
       <div
-        onClick={() => navigate('/')}
+        className="topbar-logo-container"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          cursor: 'pointer',
-          color: 'var(--primary)',
-          width: '25%',
-          minWidth: '150px'
+          flexShrink: 0,
         }}
       >
-        <img
-          src="/favicon.png"
-          alt="ArtCom"
+        <button
+          onClick={toggleMobileSidebar}
+          className="topbar-menu-toggle"
           style={{
-            width: '32px',
-            height: '32px',
-            objectFit: 'contain',
-            borderRadius: '4px',
-            filter: 'drop-shadow(0 0 8px var(--primary-glow))'
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            transition: 'background var(--transition-fast)',
           }}
-          onError={(e) => {
-            // Fallback sang Lucide Image icon nếu load favicon.png thất bại
-            e.currentTarget.style.display = 'none';
-            const fallback = document.getElementById('logo-fallback-icon');
-            if (fallback) fallback.style.display = 'flex';
-          }}
-        />
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)')}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+        >
+          <Menu size={20} />
+        </button>
+
         <div
-          id="logo-fallback-icon"
-          style={{ display: 'none', alignItems: 'center' }}
-        >
-          <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
-        </div>
-        <span
+          onClick={() => navigate('/')}
+          className="topbar-logo"
           style={{
-            fontWeight: 800,
-            fontSize: '20px',
-            letterSpacing: '0.5px',
-            background: 'linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            color: 'var(--primary)',
           }}
         >
-          ArtCom
-        </span>
+          <img
+            src="/favicon.png"
+            alt="ArtCom"
+            style={{
+              width: '32px',
+              height: '32px',
+              objectFit: 'contain',
+              borderRadius: '4px',
+              filter: 'drop-shadow(0 0 8px var(--primary-glow))'
+            }}
+            onError={(e) => {
+              // Fallback sang Lucide Image icon nếu load favicon.png thất bại
+              e.currentTarget.style.display = 'none';
+              const fallback = document.getElementById('logo-fallback-icon');
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+          <div
+            id="logo-fallback-icon"
+            style={{ display: 'none', alignItems: 'center' }}
+          >
+            <Image size={32} style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }} />
+          </div>
+          <span
+            className="topbar-logo-text"
+            style={{
+              fontWeight: 800,
+              fontSize: '20px',
+              letterSpacing: '0.5px',
+              background: 'linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            ArtCom
+          </span>
+        </div>
       </div>
 
       {/* Cột giữa: Thanh tìm kiếm căn giữa (Search Bar) */}
       <div
+        className="topbar-search-container"
         style={{
           flex: 1,
           display: 'flex',
@@ -276,7 +348,7 @@ export const TopBar = () => {
       </div>
 
       {/* Cột phải: Thông tin người dùng, Ví, Notifications & Hành động */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', justifyContent: 'flex-end', width: '40%' }}>
+      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'flex-end', flexShrink: 0 }}>
         {/* Widget hiển thị số dư ví (Wallet Balance) */}
         {user && (
           <div
@@ -321,7 +393,7 @@ export const TopBar = () => {
             }}
           >
             <Plus size={16} />
-            <span>{language === 'vn' ? 'Đăng tác phẩm' : 'Upload Art'}</span>
+            <span className="topbar-btn-text">{language === 'vn' ? 'Đăng tác phẩm' : 'Upload Art'}</span>
           </button>
         )}
 
@@ -499,12 +571,13 @@ export const TopBar = () => {
                   backgroundColor: 'var(--bg-tertiary)',
                 }}
               />
-              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px' }}>
+              <span className="topbar-user-name" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px' }}>
                 {user.nickname}
               </span>
             </div>
             <button
               onClick={handleLogout}
+              className="topbar-logout-btn"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -527,7 +600,7 @@ export const TopBar = () => {
               }}
             >
               <LogOut size={14} />
-              <span>{t.logout}</span>
+              <span className="topbar-btn-text">{t.logout}</span>
             </button>
           </div>
         ) : (

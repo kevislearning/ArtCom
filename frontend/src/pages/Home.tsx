@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Trophy, Clock, ChevronRight } from 'lucide-react';
@@ -5,23 +6,104 @@ import type { RootState } from '../store';
 import { translations } from '../utils/translation';
 import { useGetIllustrationsQuery, useGetTrendingTagsQuery } from '../store/illustrationApi';
 import { ArtworkCard } from '../components/ArtworkCard';
+import { HomePostCard } from '../components/HomePostCard';
+import type { Illustration } from '../types';
 
+
+const PostCardSkeleton = () => (
+  <div
+    className="glass-panel"
+    style={{
+      borderRadius: 'var(--border-radius-md)',
+      padding: '18px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      width: '100%',
+      animation: 'skeleton-pulse 1.8s infinite ease-in-out',
+      border: '1px solid var(--glass-border)',
+      boxShadow: 'var(--card-shadow)',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ width: '120px', height: '14px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+        <div style={{ width: '70px', height: '10px', borderRadius: '3px', backgroundColor: 'rgba(255,255,255,0.02)' }} />
+      </div>
+    </div>
+    <div style={{ height: '400px', borderRadius: 'var(--border-radius-sm)', backgroundColor: 'rgba(255,255,255,0.02)' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ width: '45%', height: '16px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+      <div style={{ width: '80%', height: '12px', borderRadius: '3px', backgroundColor: 'rgba(255,255,255,0.02)' }} />
+    </div>
+  </div>
+);
 
 export const Home = () => {
   const navigate = useNavigate();
   const { language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // Các câu truy vấn (Queries)
+  // Infinite scroll states
+  const [page, setPage] = useState(1);
+  const [posts, setPosts] = useState<Illustration[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Queries
   const { data: popularArtworks = [], isLoading: loadingPopular } = useGetIllustrationsQuery({
     sort: 'popular',
   });
 
-  const { data: newestArtworks = [], isLoading: loadingNewest } = useGetIllustrationsQuery({
+  const { data: trendingTags = [] } = useGetTrendingTagsQuery();
+
+  const { data: paginatedPosts, isFetching, isLoading: loadingNewest } = useGetIllustrationsQuery({
     sort: 'newest',
+    page,
+    limit: 6,
   });
 
-  const { data: trendingTags = [] } = useGetTrendingTagsQuery();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Append new posts to state
+  useEffect(() => {
+    if (paginatedPosts) {
+      if (paginatedPosts.length === 0) {
+        setHasMore(false);
+      } else {
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p._id));
+          const newItems = paginatedPosts.filter((p) => !existingIds.has(p._id));
+          if (paginatedPosts.length < 6) {
+            setHasMore(false);
+          }
+          return [...prev, ...newItems];
+        });
+      }
+    }
+  }, [paginatedPosts]);
+
+  // Observer trigger for infinite scroll
+  useEffect(() => {
+    if (loadingNewest || isFetching || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [loadingNewest, isFetching, hasMore]);
 
   const handleTagClick = (tagName: string) => {
     navigate(`/explore?tag=${encodeURIComponent(tagName)}`);
@@ -193,41 +275,66 @@ export const Home = () => {
         )}
       </div>
 
-      {/* 4. Lưới hiển thị các tác phẩm mới nhất */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* 4. Dòng thời gian hiển thị các tác phẩm mới nhất dưới dạng social post feed */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '640px', width: '100%', margin: '0 auto' }}>
+        <style>{`
+          @keyframes skeleton-pulse {
+            0% { opacity: 0.35; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0.35; }
+          }
+        `}</style>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Clock size={22} style={{ color: 'var(--primary)' }} />
             {t.newestWorks}
           </h2>
-          <button
-            onClick={() => navigate('/explore?sort=newest')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            Xem tất cả
-            <ChevronRight size={16} />
-          </button>
         </div>
 
-        {loadingNewest ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.loading}</div>
-        ) : newestArtworks.length === 0 ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>{t.noWorks}</div>
-        ) : (
-          <div className="masonry-grid">
-            {newestArtworks.slice(0, 8).map((artwork) => (
-              <ArtworkCard key={artwork._id} artwork={artwork} />
-            ))}
+        {posts.map((artwork) => (
+          <HomePostCard key={artwork._id} artwork={artwork} />
+        ))}
+
+        {/* loading indicator/ skeletons */}
+        {loadingNewest && page === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+            <PostCardSkeleton />
+            <PostCardSkeleton />
+          </div>
+        )}
+
+        {isFetching && page > 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', marginTop: '12px' }}>
+            <PostCardSkeleton />
+          </div>
+        )}
+
+        {/* Sentinel element to trigger scroll loading */}
+        {hasMore && !loadingNewest && !isFetching && (
+          <div ref={sentinelRef} style={{ height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+        )}
+
+        {/* No more content alert */}
+        {!hasMore && posts.length > 0 && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '24px',
+              color: 'var(--text-muted)',
+              fontSize: '13px',
+              borderTop: '1px dashed var(--glass-border)',
+              marginTop: '12px',
+            }}
+          >
+            {language === 'vn' ? '🎉 Bạn đã xem hết tất cả các tác phẩm mới nhất!' : "🎉 You've reached the end of the newest works feed!"}
+          </div>
+        )}
+
+        {/* Empty list representation */}
+        {!loadingNewest && posts.length === 0 && (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            {t.noWorks}
           </div>
         )}
       </div>

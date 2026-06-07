@@ -297,7 +297,7 @@ export const toggleBookmark = async (req, res) => {
  */
 export const getIllustrations = async (req, res) => {
   try {
-    const { sort, tag, search, artistId, period } = req.query;
+    const { sort, tag, search, artistId, period, page, limit } = req.query;
 
     const query = { visibility: 'everyone' };
     
@@ -367,6 +367,12 @@ export const getIllustrations = async (req, res) => {
       illustrationsQuery = illustrationsQuery.sort({ createdAt: -1 });
     }
 
+    if (page) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 10;
+      const skip = (pageNum - 1) * limitNum;
+      illustrationsQuery = illustrationsQuery.skip(skip).limit(limitNum);
+    }
 
     const illustrations = await illustrationsQuery.exec();
 

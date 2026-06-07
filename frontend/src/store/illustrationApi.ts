@@ -5,7 +5,7 @@ export const illustrationApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getIllustrations: builder.query<
       Illustration[],
-      { sort?: string; tag?: string; search?: string; artistId?: string; period?: string }
+      { sort?: string; tag?: string; search?: string; artistId?: string; period?: string; page?: number; limit?: number }
     >({
       query: (params) => ({
         url: '/illustrations',
