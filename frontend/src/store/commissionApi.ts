@@ -15,14 +15,11 @@ export const commissionApi = api.injectEndpoints({
       query: (id) => `/commissions/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Commission', id }],
     }),
-    createCommission: builder.mutation<
-      Commission,
-      { artistId: string; title: string; description: string; price: number; deadline: string; isPrivate: boolean }
-    >({
-      query: (data) => ({
+    createCommission: builder.mutation<Commission, FormData>({
+      query: (formData) => ({
         url: '/commissions',
         method: 'POST',
-        body: data,
+        body: formData,
       }),
       invalidatesTags: ['Commission', 'Wallet'],
     }),

@@ -51,6 +51,10 @@ const commissionSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    referenceImageUrls: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

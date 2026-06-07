@@ -516,6 +516,41 @@ export const Commissions = () => {
                         Khách hàng yêu cầu giữ kín tranh vẽ
                       </span>
                     )}
+
+                    {comm.referenceImageUrls && comm.referenceImageUrls.length > 0 && (
+                      <div style={{ marginTop: '12px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                          {language === 'vn' ? 'Ảnh mẫu/tham khảo:' : 'Reference Images:'}
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {comm.referenceImageUrls.map((url: string, index: number) => (
+                            <a
+                              key={index}
+                              href={getImageUrl(url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '6px',
+                                overflow: 'hidden',
+                                border: '1px solid var(--glass-border)',
+                                display: 'block',
+                                transition: 'transform 0.2s',
+                              }}
+                              onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                              onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                            >
+                              <img
+                                src={getImageUrl(url)}
+                                alt={`Reference ${index + 1}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div

@@ -163,6 +163,17 @@ export const translations = {
     ledgerEscrowRefund: 'Hoàn tiền (Escrow Refund)',
     markAllRead: 'Đánh dấu đã đọc',
     noNewNotifications: 'Không có thông báo mới.',
+    notifNewIllustration: '{actor} đã đăng tác phẩm mới: "{title}"',
+    notifLike: '{actor} đã thích tác phẩm của bạn: "{title}"',
+    notifBookmark: '{actor} đã lưu tác phẩm của bạn: "{title}"',
+    notifFollow: '{actor} đã bắt đầu theo dõi bạn',
+    notifComment: '{actor} đã bình luận về "{title}": "{comment}"',
+    notifReply: '{actor} đã trả lời bình luận của bạn: "{comment}"',
+    notifCommNew: 'Yêu cầu vẽ mới từ {actor}: "{title}"',
+    notifCommAccept: 'Họa sĩ đã chấp nhận yêu cầu vẽ của bạn: "{title}"',
+    notifCommReject: 'Họa sĩ đã từ chối yêu cầu vẽ của bạn: "{title}". Tiền đã được hoàn lại.',
+    notifCommCancel: 'Yêu cầu vẽ "{title}" đã bị hủy. Tiền đã được hoàn lại.',
+    notifCommComplete: 'Họa sĩ đã hoàn thành yêu cầu vẽ của bạn: "{title}". Đã bàn giao tác phẩm!',
   },
   en: {
     // Điều hướng (Navigation)
@@ -328,5 +339,108 @@ export const translations = {
     ledgerEscrowRefund: 'Escrow Refund',
     markAllRead: 'Mark all as read',
     noNewNotifications: 'No new notifications.',
+    notifNewIllustration: '{actor} posted a new work: "{title}"',
+    notifLike: '{actor} liked your work: "{title}"',
+    notifBookmark: '{actor} bookmarked your work: "{title}"',
+    notifFollow: '{actor} started following you',
+    notifComment: '{actor} commented on "{title}": "{comment}"',
+    notifReply: '{actor} replied to your comment: "{comment}"',
+    notifCommNew: 'New commission request from {actor}: "{title}"',
+    notifCommAccept: 'Artist accepted your commission: "{title}"',
+    notifCommReject: 'Artist rejected your commission request: "{title}". Funds refunded.',
+    notifCommCancel: 'Commission "{title}" has been canceled. Funds refunded.',
+    notifCommComplete: 'Artist completed your commission: "{title}". Artwork delivered!',
   }
+};
+
+export const getTranslatedNotification = (notif: any, lang: 'vn' | 'en'): string => {
+  const actorName = notif.actorId?.nickname || notif.actorId?.username || 'Someone';
+  const content = notif.contentPreview || '';
+  const t = translations[lang] || translations.vn;
+
+  try {
+    switch (notif.type) {
+      case 'new_illustration': {
+        const match = content.match(/posted a new work:\s*"(.*)"$/i);
+        if (match) {
+          return t.notifNewIllustration.replace('{actor}', actorName).replace('{title}', match[1]);
+        }
+        break;
+      }
+      case 'like': {
+        const match = content.match(/liked your work:\s*"(.*)"$/i);
+        if (match) {
+          return t.notifLike.replace('{actor}', actorName).replace('{title}', match[1]);
+        }
+        break;
+      }
+      case 'bookmark': {
+        const match = content.match(/bookmarked your work:\s*"(.*)"$/i);
+        if (match) {
+          return t.notifBookmark.replace('{actor}', actorName).replace('{title}', match[1]);
+        }
+        break;
+      }
+      case 'follow': {
+        if (content.match(/started following you$/i)) {
+          return t.notifFollow.replace('{actor}', actorName);
+        }
+        break;
+      }
+      case 'comment': {
+        const match = content.match(/commented on\s*"(.*)":\s*"(.*)"$/i);
+        if (match) {
+          return t.notifComment
+            .replace('{actor}', actorName)
+            .replace('{title}', match[1])
+            .replace('{comment}', match[2]);
+        }
+        break;
+      }
+      case 'reply': {
+        const match = content.match(/replied to your comment:\s*"(.*)"$/i);
+        if (match) {
+          return t.notifReply.replace('{actor}', actorName).replace('{comment}', match[1]);
+        }
+        break;
+      }
+      case 'commission_update': {
+        if (content.includes('New commission request from')) {
+          const match = content.match(/New commission request from .*:\s*"(.*)"$/i);
+          if (match) {
+            return t.notifCommNew.replace('{actor}', actorName).replace('{title}', match[1]);
+          }
+        }
+        if (content.includes('Artist accepted your commission')) {
+          const match = content.match(/Artist accepted your commission:\s*"(.*)"$/i);
+          if (match) {
+            return t.notifCommAccept.replace('{title}', match[1]);
+          }
+        }
+        if (content.includes('Artist rejected your commission request')) {
+          const match = content.match(/Artist rejected your commission request:\s*"(.*)"\.\s*Funds refunded\.$/i);
+          if (match) {
+            return t.notifCommReject.replace('{title}', match[1]);
+          }
+        }
+        if (content.includes('has been canceled. Funds refunded.')) {
+          const match = content.match(/Commission\s*"(.*)"\s*has been canceled\.\s*Funds refunded\.$/i);
+          if (match) {
+            return t.notifCommCancel.replace('{title}', match[1]);
+          }
+        }
+        if (content.includes('Artist completed your commission')) {
+          const match = content.match(/Artist completed your commission:\s*"(.*)"\.\s*Artwork delivered!$/i);
+          if (match) {
+            return t.notifCommComplete.replace('{title}', match[1]);
+          }
+        }
+        break;
+      }
+    }
+  } catch (err) {
+    console.error('Error parsing notification translation:', err);
+  }
+
+  return content;
 };

@@ -101,6 +101,7 @@ export interface Commission {
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled' | 'rejected';
   resultIllustrationId?: Illustration | null;
   isPrivate: boolean;
+  referenceImageUrls?: string[];
   createdAt: string;
   updatedAt: string;
 }

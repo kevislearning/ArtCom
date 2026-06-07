@@ -1,11 +1,12 @@
 import fs from 'fs';
+import mongoose from 'mongoose';
 import Illustration from '../models/Illustration.js';
 import User from '../models/User.js';
 import Like from '../models/Like.js';
 import Bookmark from '../models/Bookmark.js';
 import Follow from '../models/Follow.js';
 import { notificationService } from '../services/notificationService.js';
-import { uploadMultipleToCloudinary } from '../utils/cloudinary.js';
+import { uploadMultipleToCloudinary, deleteMultipleFromCloudinary } from '../utils/cloudinary.js';
 
 
 /**
@@ -192,6 +193,8 @@ export const deleteIllustration = async (req, res) => {
       return res.status(403).json({ message: 'You are not authorized to delete this work' });
     }
 
+    deleteMultipleFromCloudinary(illustration.imageUrls);
+
     await Illustration.deleteOne({ _id: illustration._id });
     await Like.deleteMany({ illustrationId: illustration._id });
     await Bookmark.deleteMany({ illustrationId: illustration._id });
@@ -344,7 +347,85 @@ export const getIllustrations = async (req, res) => {
       }
     }
 
-    let illustrationsQuery = Illustration.find(query)
+    let illustrationsQuery;
+
+    const isFeedQuery = !tag && !search && !artistId;
+    if (req.user && isFeedQuery && (!sort || sort === 'newest')) {
+      const followingRelations = await Follow.find({ followerId: req.user.id });
+      const followedArtistIds = followingRelations.map(f => f.followingId);
+
+      const [userLikes, userBookmarks] = await Promise.all([
+        Like.find({ userId: req.user.id }).select('illustrationId'),
+        Bookmark.find({ userId: req.user.id }).select('illustrationId'),
+      ]);
+
+      const interactedIds = [
+        ...userLikes.map(l => l.illustrationId),
+        ...userBookmarks.map(b => b.illustrationId),
+      ];
+
+      const interactedWorks = await Illustration.find({ _id: { $in: interactedIds } }).select('tags');
+      const userFavTags = Array.from(new Set(interactedWorks.flatMap(w => w.tags || [])));
+
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 10;
+      const skip = (pageNum - 1) * limitNum;
+
+      const followedObjectIds = followedArtistIds.map(id => new mongoose.Types.ObjectId(id));
+
+      const pipeline = [
+        { $match: query },
+        {
+          $addFields: {
+            score: {
+              $add: [
+                {
+                  $cond: {
+                    if: { $in: ['$artistId', followedObjectIds] },
+                    then: 10,
+                    else: 0
+                  }
+                },
+                {
+                  $cond: {
+                    if: {
+                      $gt: [
+                        { $size: { $setIntersection: [{ $ifNull: ['$tags', []] }, userFavTags] } },
+                        0
+                      ]
+                    },
+                    then: 5,
+                    else: 0
+                  }
+                }
+              ]
+            }
+          }
+        },
+        { $sort: { score: -1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limitNum }
+      ];
+
+      const illustrations = await Illustration.aggregate(pipeline);
+      const populated = await Illustration.populate(illustrations, {
+        path: 'artistId',
+        select: 'username nickname avatarUrl isArtist'
+      });
+
+      const likedSet = new Set(userLikes.map(l => l.illustrationId.toString()));
+      const bookmarkedSet = new Set(userBookmarks.map(b => b.illustrationId.toString()));
+
+      const results = populated.map(illustration => ({
+        ...illustration,
+        liked: likedSet.has(illustration._id.toString()),
+        bookmarked: bookmarkedSet.has(illustration._id.toString()),
+      }));
+
+      return res.status(200).json(results);
+    }
+
+    illustrationsQuery = Illustration.find(query)
       .populate('artistId', 'username nickname avatarUrl isArtist');
 
     // Các chiến lược sắp xếp (sorting strategies)

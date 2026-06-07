@@ -18,20 +18,20 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
   const { user, language } = useSelector((state: RootState) => state.auth);
   const t = translations[language];
 
-  // States
+  // Các trạng thái (States)
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [isNotInterested, setIsNotInterested] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Mutations
+  // Các đột biến (Mutations)
   const [toggleLike, { isLoading: isLiking }] = useToggleLikeMutation();
   const [toggleBookmark, { isLoading: isBookmarking }] = useToggleBookmarkMutation();
 
-  // Queries (fetch comments for preview)
+  // Các truy vấn (lấy bình luận để xem trước - Queries)
   const { data: comments = [] } = useGetCommentsQuery(artwork._id);
 
-  // Dropdown reference for click-outside
+  // Tham chiếu Dropdown để xử lý click-outside (Dropdown reference)
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -166,12 +166,12 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
         transition: 'none', /* Bỏ scale hover chuyển động dọc của card thường */
       }}
       onMouseOver={(e) => {
-        // override class .glass-card transform: translateY(-4px)
+        // Ghi đè lớp .glass-card dịch chuyển: translateY(-4px) (override class)
         e.currentTarget.style.transform = 'none';
         e.currentTarget.style.boxShadow = 'var(--card-shadow)';
       }}
     >
-      {/* Toast Notification */}
+      {/* Thông báo Toast (Toast Notification) */}
       {toastMessage && (
         <div
           style={{
@@ -197,7 +197,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
         </div>
       )}
 
-      {/* 1. Header: Artist Info & Menu */}
+      {/* 1. Phần đầu: Thông tin họa sĩ & Menu (Header) */}
       <div
         style={{
           display: 'flex',
@@ -244,7 +244,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           </div>
         )}
 
-        {/* Dropdown Menu Trigger */}
+        {/* Bộ kích hoạt Dropdown Menu (Dropdown Menu Trigger) */}
         <div style={{ position: 'relative' }} ref={menuRef}>
           <button
             onClick={() => setShowMenu(!showMenu)}
@@ -266,7 +266,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
             <MoreHorizontal size={18} />
           </button>
 
-          {/* Glassmorphic Dropdown List */}
+          {/* Danh sách Dropdown hiệu ứng Glassmorphic (Glassmorphic Dropdown List) */}
           {showMenu && (
             <div
               className="glass-panel"
@@ -361,7 +361,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
         </div>
       </div>
 
-      {/* 2. Body: Multi-Image Carousel */}
+      {/* 2. Thân bài viết: Multi-Image Carousel (Trình chiếu nhiều ảnh) */}
       <div
         style={{
           position: 'relative',
@@ -374,7 +374,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           alignItems: 'center',
         }}
       >
-        {/* Blurred backdrop image */}
+        {/* Ảnh nền mờ phía sau (Blurred backdrop image) */}
         {artwork.imageUrls[currentImageIndex] && (
           <div
             style={{
@@ -394,7 +394,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           />
         )}
 
-        {/* Crisp foreground image */}
+        {/* Ảnh sắc nét phía trước (Crisp foreground image) */}
         {artwork.imageUrls[currentImageIndex] && (
           <img
             src={getImageUrl(artwork.imageUrls[currentImageIndex])}
@@ -412,7 +412,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           />
         )}
 
-        {/* AI Warning Badge */}
+        {/* Huy hiệu cảnh báo AI (AI Warning Badge) */}
         {artwork.isAIGenerated && (
           <span
             style={{
@@ -434,7 +434,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           </span>
         )}
 
-        {/* Image index badge */}
+        {/* Huy hiệu chỉ số trang ảnh (Image index badge) */}
         {artwork.imageUrls.length > 1 && (
           <span
             style={{
@@ -456,7 +456,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           </span>
         )}
 
-        {/* Carousel Arrow Controls */}
+        {/* Các nút điều khiển mũi tên của Carousel (Carousel Arrow Controls) */}
         {artwork.imageUrls.length > 1 && (
           <>
             {currentImageIndex > 0 && (
@@ -521,10 +521,10 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
         )}
       </div>
 
-      {/* 3. Footer: Interaction & Comment Preview */}
+      {/* 3. Chân bài viết: Tương tác & Xem trước bình luận (Footer) */}
       <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
-        {/* Title & Actions Row */}
+        {/* Hàng tiêu đề & Hành động (Title & Actions Row) */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <h3
@@ -558,9 +558,9 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
             )}
           </div>
 
-          {/* Likes & Bookmarks Buttons */}
+          {/* Các nút Thích & Đánh dấu (Likes & Bookmarks Buttons) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-            {/* Like */}
+            {/* Thích (Like) */}
             <button
               onClick={handleLike}
               style={{
@@ -594,7 +594,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
               <span>{artwork.likesCount || 0}</span>
             </button>
 
-            {/* Bookmark */}
+            {/* Đánh dấu (Bookmark) */}
             <button
               onClick={handleBookmark}
               style={{
@@ -630,7 +630,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           </div>
         </div>
 
-        {/* Tags list */}
+        {/* Danh sách thẻ (Tags list) */}
         {artwork.tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
             {artwork.tags.map((tg, i) => (
@@ -652,7 +652,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
           </div>
         )}
 
-        {/* 4. Comment Preview Container */}
+        {/* 4. Khung chứa xem trước bình luận (Comment Preview Container) */}
         {artwork.commentsEnabled ? (
           <div
             onClick={() => navigate(`/artwork/${artwork._id}`)}
@@ -671,7 +671,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
             onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)')}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)')}
           >
-            {/* Preview header */}
+            {/* Tiêu đề xem trước (Preview header) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <MessageSquare size={14} style={{ color: 'var(--text-secondary)' }} />
               <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
@@ -679,7 +679,7 @@ export const HomePostCard = ({ artwork }: HomePostCardProps) => {
               </span>
             </div>
 
-            {/* Comment snippet */}
+            {/* Đoạn trích bình luận (Comment snippet) */}
             {firstComment ? (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <img

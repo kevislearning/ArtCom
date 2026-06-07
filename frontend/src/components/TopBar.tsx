@@ -18,7 +18,7 @@ import {
   useMarkNotificationReadMutation,
 } from '../store/notificationApi';
 import { useGetWalletBalanceQuery } from '../store/walletApi';
-import { translations } from '../utils/translation';
+import { translations, getTranslatedNotification } from '../utils/translation';
 import { getImageUrl } from '../utils/url';
 import { logout } from '../store/authSlice';
 import { useLogoutMutation } from '../store/authApi';
@@ -528,7 +528,7 @@ export const TopBar = ({ toggleMobileSidebar }: { toggleMobileSidebar: () => voi
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: '13px', color: 'var(--text-primary)', margin: 0, fontWeight: notif.isRead ? 400 : 700 }}>
-                            {notif.contentPreview}
+                            {getTranslatedNotification(notif, language)}
                           </p>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                             {new Date(notif.createdAt).toLocaleDateString('vi-VN')}

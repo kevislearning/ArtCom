@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Heart, Bookmark, Eye } from 'lucide-react';
+import { Heart, Bookmark, Eye, Layers } from 'lucide-react';
 import type { Illustration } from '../types';
 import { useToggleLikeMutation, useToggleBookmarkMutation } from '../store/illustrationApi';
 import { useSelector } from 'react-redux';
@@ -100,6 +100,32 @@ export const ArtworkCard = ({ artwork, rank }: ArtworkCardProps) => {
         >
           Riêng tư
         </span>
+      )}
+      {/* Bộ chỉ báo nhiều hình ảnh */}
+      {artwork.imageUrls.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: artwork.visibility === 'private' ? '44px' : '12px',
+            right: '12px',
+            backgroundColor: 'rgba(10, 11, 16, 0.75)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 800,
+            padding: '4px 8px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            zIndex: 10,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <Layers size={11} style={{ opacity: 0.9 }} />
+          <span>{artwork.imageUrls.length}</span>
+        </div>
       )}
 
       {/* Huy hiệu xếp hạng nổi (Floating Rank Badge) */}

@@ -24,8 +24,15 @@ export const createCommission = async (req, res) => {
     }
 
     // Kiểm tra số dư của client trước
-    if (req.user.walletBalance < price) {
+    const priceNum = Number(price);
+    if (req.user.walletBalance < priceNum) {
       return res.status(400).json({ message: 'Insufficient wallet balance' });
+    }
+
+    // Tải lên ảnh tham chiếu nếu có
+    let referenceImageUrls = [];
+    if (req.files && req.files.length > 0) {
+      referenceImageUrls = await uploadMultipleToCloudinary(req.files);
     }
 
     // 1. Tạo bản ghi commission
@@ -34,11 +41,12 @@ export const createCommission = async (req, res) => {
       artistId,
       title,
       description,
-      price,
+      price: priceNum,
       deadline: new Date(deadline),
       isPrivate: isPrivate === 'true' || isPrivate === true,
       status: 'pending',
       paymentStatus: 'unpaid',
+      referenceImageUrls,
     });
 
     // 2. Khóa tiền của client trong escrow ngay lập tức

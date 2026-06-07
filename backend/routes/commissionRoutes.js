@@ -18,7 +18,7 @@ router.get('/client', protect, getClientCommissions);
 router.get('/artist', protect, getArtistCommissions);
 router.get('/:id', protect, getCommissionById);
 
-router.post('/', protect, createCommission);
+router.post('/', protect, upload.array('referenceImages', 5), createCommission);
 router.post('/:id/accept', protect, acceptCommission);
 router.post('/:id/reject', protect, rejectCommission);
 router.post('/:id/cancel', protect, cancelCommission);

@@ -42,7 +42,7 @@ export const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: 
 
   return (
     <>
-      {/* Backdrop for mobile drawer */}
+      {/* Lớp nền mờ cho ngăn kéo di động (Backdrop for mobile drawer) */}
       {mobileOpen && (
         <div
           className="sidebar-backdrop"
@@ -76,7 +76,7 @@ export const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: 
         }}
       >
         <style>{`
-          /* Mobile styles for the Sidebar drawer */
+          /* Kiểu dáng di động cho ngăn kéo Sidebar (Mobile styles) */
           @media (max-width: 768px) {
             .sidebar {
               position: fixed !important;
